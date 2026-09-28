@@ -5,16 +5,20 @@
 //   PANEL_SRC=/path/to/cyber-place-panel-desktop   use a local checkout instead
 //                                                  (development; a symlink)
 //
-// Idempotent: a vendor/panel already at the pinned commit is left alone.
+// The pinned commit is downloaded as GitHub's tarball over HTTPS and unpacked
+// with `tar`, so the build needs neither git nor credentials (the panel
+// repository is public). Idempotent: a vendor/panel already at the pinned
+// commit is left alone.
 import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const target = path.join(root, "vendor", "panel");
 const stamp = path.join(target, ".panel-ref");
-const repo = "https://github.com/Lev-96/cyber-place-panel-desktop.git";
+const archive = (sha) => `https://codeload.github.com/Lev-96/cyber-place-panel-desktop/tar.gz/${sha}`;
 const ref = readFileSync(path.join(root, "panel.ref"), "utf8").trim();
 
 if (!/^[0-9a-f]{40}$/.test(ref)) {
@@ -40,14 +44,21 @@ if (!isLink(target) && existsSync(stamp) && readFileSync(stamp, "utf8").trim() =
   process.exit(0);
 }
 
+const res = await fetch(archive(ref));
+if (!res.ok) {
+  throw new Error(`[fetch-panel] could not download the panel at ${ref.slice(0, 7)}: HTTP ${res.status}`);
+}
+const tarball = path.join(os.tmpdir(), `cyber-place-panel-${ref}.tar.gz`);
+writeFileSync(tarball, Buffer.from(await res.arrayBuffer()));
+
 rmSync(target, { recursive: true, force: true });
 mkdirSync(target, { recursive: true });
-const git = (...args) => execFileSync("git", args, { cwd: target, stdio: "inherit" });
-git("init", "--quiet");
-git("remote", "add", "origin", repo);
-git("fetch", "--quiet", "--depth", "1", "origin", ref);
-git("checkout", "--quiet", "FETCH_HEAD");
-rmSync(path.join(target, ".git"), { recursive: true, force: true });
+execFileSync("tar", ["-xzf", tarball, "-C", target, "--strip-components=1"], { stdio: "inherit" });
+rmSync(tarball, { force: true });
+
+if (!existsSync(path.join(target, "src", "App.tsx"))) {
+  throw new Error("[fetch-panel] the downloaded archive does not contain the panel's src/App.tsx");
+}
 writeFileSync(stamp, `${ref}\n`);
 console.log(`[fetch-panel] vendor/panel fetched at ${ref.slice(0, 7)}`);
 
