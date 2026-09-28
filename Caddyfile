@@ -1,0 +1,57 @@
+# Serves the built app (dist/) on Railway. Railpack's static Vite image uses
+# this file instead of its default when it is at the repository root.
+#
+# BACKEND_ORIGIN and REVERB_ORIGIN are Railway service variables, set per
+# environment, so a staging page may only talk to the staging backend and a
+# production page only to production:
+#   BACKEND_ORIGIN=https://cyber-place-server-production.up.railway.app
+#   REVERB_ORIGIN=wss://cyber-place-reverb.up.railway.app
+{
+	admin off
+	persist_config off
+	auto_https off
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+:{$PORT:8080} {
+	root * {$STATIC_ROOT:/app/dist}
+	encode zstd gzip
+
+	# Nothing but the built app is ever served. A `handle` block, not a bare
+	# `respond`: Caddy runs `try_files` before `respond`, which would rewrite
+	# these paths to index.html first.
+	@internal path /.env* /.git* /node_modules/* /vendor/* /src/* /package.json /package-lock.json /Caddyfile
+	handle @internal {
+		respond 404
+	}
+
+	header {
+		# default-src none, then only what the panel's screens need:
+		# the backend (API, stored images), Reverb, Telegram's script,
+		# map tiles and the address search the branch form uses.
+		Content-Security-Policy "default-src 'none'; script-src 'self' https://telegram.org/js/telegram-web-app.js; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: {$BACKEND_ORIGIN} https://*.tile.openstreetmap.org https://server.arcgisonline.com https://*.basemaps.cartocdn.com; media-src 'self' blob: {$BACKEND_ORIGIN}; connect-src 'self' {$BACKEND_ORIGIN} {$REVERB_ORIGIN} https://nominatim.openstreetmap.org https://open.er-api.com; manifest-src 'self'; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self' https://web.telegram.org https://webk.telegram.org https://webz.telegram.org"
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		# The camera is for scanning a booking's QR code at the venue.
+		Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy "same-origin-allow-popups"
+		-Server
+	}
+
+	# Hashed file names: cached for good. index.html: always revalidated, so a
+	# deploy reaches everyone on their next load.
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	@entry path / /index.html
+	header @entry Cache-Control "no-cache"
+
+	# Any other path is the app: a file if one exists, else index.html, where
+	# the router takes over.
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -1,0 +1,242 @@
+/*
+ * The web / Telegram frame around the panel's own screens (2026-09-28).
+ *
+ * Scoped to classes this app adds (.web-shell, .web-gate, .web-telegram) so
+ * nothing here can change how the panel's screens are drawn; it only changes
+ * the frame they sit in. Colours are the panel's tokens from its global.css.
+ *
+ *   ≥ 900px  the desktop layout: fixed sidebar, content beside it
+ *   < 900px  a top bar and a drawer, so the same screens fit a phone and
+ *            Telegram's narrow view
+ */
+
+/* Mobile browsers and Telegram: the visible height, not the layout height. */
+.web-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.web-shell .web-drawer {
+  min-height: 0;
+}
+
+.web-shell .web-drawer .sidebar {
+  height: 100%;
+}
+
+/* ── wide: the desktop's grid; the top bar shrinks to one corner button ── */
+.web-topbar {
+  position: fixed;
+  top: 12px;
+  right: 20px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.web-topbar__menu,
+.web-topbar__logo,
+.web-drawer-backdrop {
+  display: none;
+}
+
+.web-topbar__action {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.web-topbar__action:hover,
+.web-topbar__action:focus-visible {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+/* ── narrow: top bar + drawer ─────────────────────────────────────────── */
+@media (max-width: 899px) {
+  .web-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .web-topbar {
+    position: sticky;
+    top: 0;
+    right: auto;
+    grid-column: 1;
+    grid-row: 1;
+    justify-content: space-between;
+    padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+    padding-top: max(8px, env(safe-area-inset-top));
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .web-topbar__menu {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 44px;
+    height: 44px;
+    padding: 0 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .web-topbar__menu span {
+    display: block;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--color-text);
+  }
+
+  .web-topbar__logo {
+    display: block;
+    height: 28px;
+    width: auto;
+  }
+
+  .web-shell .main {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 0;
+    padding: 16px max(12px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+
+  .web-drawer {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(280px, 86vw);
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--color-surface);
+  }
+
+  .web-shell.is-drawer-open .web-drawer {
+    transform: translateX(0);
+  }
+
+  .web-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(2, 5, 20, 0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .web-shell.is-drawer-open .web-drawer-backdrop {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-drawer,
+  .web-drawer-backdrop {
+    transition: none;
+  }
+}
+
+/* ── sign-in and the Telegram gate ────────────────────────────────────── */
+.web-gate {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+
+.web-gate__card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+
+.web-gate__logo {
+  height: 40px;
+  width: auto;
+  align-self: flex-start;
+}
+
+.web-gate__title {
+  margin: 0;
+}
+
+.web-gate__note {
+  margin: 0;
+  font-size: 13px;
+}
+
+.web-gate__langs {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.web-gate__lang {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.web-gate__lang.is-active {
+  color: var(--color-text);
+  border-color: var(--color-primary);
+}
+
+/* ── Telegram access dialog ───────────────────────────────────────────── */
+.web-telegram {
+  width: min(440px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.web-telegram__title {
+  margin: 0;
+}
+
+.web-telegram__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.web-telegram__url {
+  color: var(--color-primary);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.web-telegram__actions,
+.web-telegram__footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}

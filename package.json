@@ -1,0 +1,42 @@
+{
+  "name": "cyber-place-owner-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cyber Place owner panel for the browser and as a Telegram Mini App. Renders the desktop panel's own screens (fetched at a pinned commit) against the same backend.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "fetch-panel": "node scripts/fetch-panel.mjs",
+    "check-deps": "node scripts/check-deps.mjs",
+    "dev": "npm run fetch-panel && vite",
+    "typecheck": "npm run fetch-panel && tsc -p tsconfig.json --noEmit",
+    "build": "npm run fetch-panel && npm run check-deps && tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "npm run fetch-panel && vitest run"
+  },
+  "dependencies": {
+    "@types/leaflet": "1.9.21",
+    "jsqr": "1.4.0",
+    "laravel-echo": "2.3.4",
+    "leaflet": "1.9.4",
+    "libphonenumber-js": "1.13.7",
+    "pusher-js": "8.5.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "react-router-dom": "7.14.2"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.2",
+    "@types/node": "20.19.39",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "4.7.0",
+    "jsdom": "29.1.1",
+    "typescript": "5.9.3",
+    "vite": "5.4.21",
+    "vitest": "4.1.5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,81 @@
+# Cyber Place owner web + Telegram Mini App
+
+The owner panel in a browser and inside Telegram. It is **the desktop panel's
+own screens**, built for the web: nothing here re-implements a feature, a
+price, a rule or a permission. The backend (`/var/www/html/cyber-place`)
+decides everything; this app shows its answers.
+
+Read the panel's `CLAUDE.md` (`vendor/panel/CLAUDE.md` after `npm run
+fetch-panel`) for how its screens work, and the backend's for the API.
+
+## How it is built
+
+- `panel.ref` pins the panel commit. `scripts/fetch-panel.mjs` puts that
+  commit's source at `vendor/panel/` (gitignored). **The panel repository is
+  never modified by this app.** Bump `panel.ref` to take newer screens.
+  `PANEL_SRC=/path/to/panel npm run dev` uses a local checkout (symlink).
+- Vite aliases: `@/` → `vendor/panel/src/` (the panel's own imports),
+  `@web/` → `src/` (this app). `overrides.config.mjs` lists the few panel
+  modules replaced for the web; `tsconfig.json` `paths` carries the same map
+  (a test keeps them identical). Each replacement exports the same names:
+
+  | Panel module | Replaced because |
+  |---|---|
+  | `@/api/auth` | sign in/out through `/owner-web/session/*`; the desktop's `/session/logout` deletes EVERY token of the user, the desktop's included |
+  | `@/infrastructure/KeyValueStore` | the session token lives in `sessionStorage` |
+  | `@/components/Layout` | a shell that works from 360px (drawer + top bar); mounts every notifier the desktop shell mounts |
+  | `@/routes/Login` | a light sign-in (no three.js); in Telegram it says "reopen from the bot" |
+  | `@/telemetry/TelemetryTracker` | desktop telemetry must not count web traffic |
+
+  Replace a module only when the web truly differs, and only by alias: a
+  panel file imported by RELATIVE path cannot be replaced (check with grep).
+- `scripts/check-deps.mjs` fails the build if a library version differs from
+  the panel's lockfile: the panel's code must run on what it was tested with.
+- Web-only text: `src/web/i18n.ts` (en/ru/am, the panel's `useLang()`
+  language). Keep it small — the working screens use the panel's dictionary.
+  No em dash; Armenian never says «Վահանակ» for this panel.
+
+## Security model (server-side; see backend `config/client_access.php`)
+
+- Knowing the URL gives a sign-in form and nothing else. An admin grants an
+  OWNER `owner_web` and/or `telegram` access (`php artisan client-access grant
+  <email> <client>` or `PUT /admin/owners/{id}/client-access/{client}`).
+- Tokens from `/owner-web/session/login` and `/telegram/mini-app/session`
+  carry a `client:*` ability, expire (12h web / 8h Telegram), die after 60
+  idle minutes, die on revoke or an admin block, and may not call the routes
+  in `denied_routes` (logout-all, account switch, admin, password/email
+  change, creating or writing managers/users, deleting a company, unlock PIN,
+  agent token rotation, Wake-on-LAN, PS5 wake events). Those screens still
+  render from the panel's code; the server refuses the write with a sentence.
+- Telegram: the app sends Telegram's signed launch data untouched; the
+  backend checks the HMAC with the bot token, freshness (5 min) and one-time
+  use. Linking: the owner creates a one-time link on the web → opens it in
+  Telegram → the web shows the Telegram @name → the owner confirms with the
+  password. Until confirmed a link grants nothing.
+- PS5 wake/rest/pairing and the kiosk agent's LAN control stay desktop-only
+  (the venue network is unreachable from a browser); the server refuses them
+  to web tokens and the screens show the server's sentence.
+
+## Environments (Railway, project "Cyber Place Owner-Web")
+
+| | staging | production |
+|---|---|---|
+| branch | `staging` | `master` |
+| `VITE_BACKEND_URL` (build) | staging backend | production backend |
+| `BACKEND_ORIGIN` (Caddy) | same origin | same origin |
+| `REVERB_ORIGIN` (Caddy) | `wss://` staging Reverb | `wss://` production Reverb |
+| Telegram bot | the staging bot | the production bot |
+
+The backend of each environment holds its own `TELEGRAM_OWNER_BOT_TOKEN`,
+`TELEGRAM_OWNER_BOT_USERNAME`, `TELEGRAM_OWNER_APP_SHORT_NAME`. Never point a
+production bot at staging. Railway does not expand `${VAR}`: literal values.
+
+`Caddyfile` serves `dist/`: SPA fallback, internal paths 404, CSP as an HTTP
+header (only there does `frame-ancestors` work; it admits Telegram's web
+clients and nobody else), HSTS, nosniff, no-referrer.
+
+## Checks
+
+`npm run typecheck`, `npm test` (vitest), `npm run build`. The backend side is
+covered by `tests/Feature/OwnerWebAccessTest.php` and friends there. Commits
+go to `staging`; production is promoted by the owner.

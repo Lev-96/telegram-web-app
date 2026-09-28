@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/api/auth": ["src/overrides/auth.ts"],
+      "@/infrastructure/KeyValueStore": ["src/overrides/KeyValueStore.ts"],
+      "@/components/Layout": ["src/overrides/Layout.tsx"],
+      "@/routes/Login": ["src/overrides/Login.tsx"],
+      "@/telemetry/TelemetryTracker": ["src/overrides/TelemetryTracker.tsx"],
+      "@web/*": ["src/*"],
+      "@/*": ["vendor/panel/src/*"]
+    },
+    "noEmit": true
+  },
+  "include": ["src", "tests", "vendor/panel/src/vite-env.d.ts", "overrides.config.mjs", "vite.config.ts"]
+}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#020514" />
+    <!--
+      Telegram's Mini App script: in Telegram it hands over the signed launch
+      data; in a browser it does nothing. The Content-Security-Policy is sent as
+      an HTTP header by the server (Caddyfile), not here: frame-ancestors, which
+      lets Telegram's web clients embed the app and nobody else, only works as
+      a header.
+    -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="icon" href="./logo.png" />
+    <title>Cyber Place</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
