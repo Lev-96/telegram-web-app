@@ -19,14 +19,6 @@
 	root * {$STATIC_ROOT:/app/dist}
 	encode zstd gzip
 
-	# Nothing but the built app is ever served. A `handle` block, not a bare
-	# `respond`: Caddy runs `try_files` before `respond`, which would rewrite
-	# these paths to index.html first.
-	@internal path /.env* /.git* /node_modules/* /vendor/* /src/* /package.json /package-lock.json /Caddyfile
-	handle @internal {
-		respond 404
-	}
-
 	header {
 		# default-src none, then only what the panel's screens need:
 		# the backend (API, stored images), Reverb, Telegram's script,
@@ -38,6 +30,9 @@
 		# The camera is for scanning a booking's QR code at the venue.
 		Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=()"
 		Cross-Origin-Opener-Policy "same-origin-allow-popups"
+		# Our files are ours: another site may not embed them as resources.
+		Cross-Origin-Resource-Policy "same-origin"
+		X-Permitted-Cross-Domain-Policies "none"
 		-Server
 	}
 
@@ -48,10 +43,22 @@
 	@entry path / /index.html
 	header @entry Cache-Control "no-cache"
 
-	# Any other path is the app: a file if one exists, else index.html, where
-	# the router takes over.
-	handle {
-		try_files {path} /index.html
-		file_server
+	# An allowlist, not a denylist, evaluated in exactly this order (route).
+	#   - only GET and HEAD: a static page takes no writes, so POST, PUT,
+	#     DELETE, TRACE and friends are 405 before anything else runs;
+	#   - the app routes with the URL hash, so the ONLY paths a browser ever
+	#     asks for are the page and its built files (Telegram's launch data
+	#     and link codes travel in the hash and the query of "/"). Everything
+	#     else — /.env, /.git, /wp-admin, *.php, /api/..., the source tree —
+	#     is 404 without touching the file system, and a missing asset is a
+	#     404 too, never the page in its place.
+	route {
+		@unsafe not method GET HEAD
+		respond @unsafe 405
+
+		@app path / /index.html /logo.png /assets/* /fonts/* /bg/*
+		file_server @app
+
+		respond 404
 	}
 }

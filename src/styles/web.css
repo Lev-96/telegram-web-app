@@ -240,3 +240,67 @@
   justify-content: flex-end;
   flex-wrap: wrap;
 }
+
+/* ── sign-in: the desktop's own login-* screen, plus the web's notes ───── */
+.web-login__card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.web-login__error {
+  text-align: center;
+}
+
+.web-login__note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/*
+ * The desktop's login is one fixed window (100vh, nothing scrolls, the
+ * composition sized from the height alone, 400px at the least). A browser
+ * can be a phone held sideways or a short laptop window, so on the web:
+ *   - the composition is sized from the smaller of height and width, down
+ *     to 260px, so the ring never outgrows a phone's width;
+ *   - the screen scrolls when the form cannot fit, and is centred with auto
+ *     margins, so a tall form starts at the top instead of being cut off at
+ *     both ends (flex centring would clip the top out of reach);
+ *   - the backdrop stays put while the form scrolls over it.
+ * The desktop's own rules are untouched: everything here is under .web-login.
+ */
+.login-shell.web-login {
+  --ring-size: clamp(260px, min(62vh, 62dvh, 92vw), 620px);
+  height: 100vh;
+  height: 100dvh;
+  justify-content: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(56px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+}
+
+.login-shell.web-login .login-stage {
+  margin-block: auto;
+  flex-shrink: 0;
+}
+
+.login-shell.web-login .login-scene {
+  position: fixed;
+  inset: 0;
+}
+
+.login-shell.web-login .login-lang {
+  position: fixed;
+  z-index: 5;
+}
+
+@media (max-width: 480px) {
+  .login-shell.web-login .login-stage {
+    max-width: 100%;
+  }
+}

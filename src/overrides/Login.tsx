@@ -1,46 +1,74 @@
 /**
- * The panel's `@/routes/Login` for the web: the panel's own sign-in (its
- * AuthContext, its token handling) behind a light form — the desktop's screen
- * carries a three.js scene and a password-reset flow this app does not offer.
+ * The panel's `@/routes/Login` for the web.
  *
- * Inside Telegram there is no password to type: a Telegram session that ended
- * is renewed by opening the Mini App again, so that is what this screen says.
+ * Built from the desktop's own sign-in pieces — the WebGL space scene, the HUD
+ * ring around the wordmark, the email field that remembers addresses, the
+ * password field, the language pills and every `login-*` style — so the web
+ * greets an owner exactly as the desktop does. Two things differ:
+ *
+ *   - no "forgot password" face: the reset link it mails is the desktop's;
+ *     the card says where to reset instead;
+ *   - inside Telegram there is no password at all: a Telegram session that
+ *     ended is renewed by opening the Mini App again, so that is what shows.
+ *
+ * The scene is decoration and is treated as such: skipped when the viewer
+ * asks for reduced motion, and if WebGL is unavailable it quietly leaves the
+ * CSS backdrop, which already looks finished, and never takes the form down.
  */
 import { blockingKeyOf } from "@/api/blockingErrors";
 import type { ApiError } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
+import { recentEmails } from "@/auth/recentEmails";
+import HudBackdrop from "@/components/login/HudBackdrop";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import PasswordInput from "@/components/ui/PasswordInput";
+import SuggestInput from "@/components/ui/SuggestInput";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
 import { errorCode } from "@web/telegram/telegram";
 import { useWebText } from "@web/web/i18n";
-import { FormEvent, useState } from "react";
+import { Component, FormEvent, lazy, ReactNode, Suspense, useEffect, useState } from "react";
+
+// Same split as the desktop: three.js arrives after the form.
+const LoginScene = lazy(() => import("@/components/login/LoginScene"));
+
+const LANG_LABEL: Record<string, string> = { en: "ENG", ru: "РУС", am: "ՀԱՅ" };
 
 const inTelegram = () => document.documentElement.dataset.shell === "telegram";
 
+const prefersReducedMotion = () =>
+  typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** A scene that cannot start (no WebGL, lost context) removes itself. */
+class SceneGuard extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
 const Login = () => {
   const { login } = useAuth();
-  const { lang, setLang, t } = useLang();
+  const { t, lang, setLang } = useLang();
   const tw = useWebText();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [known, setKnown] = useState<string[]>([]);
+  const [motion] = useState(() => !prefersReducedMotion());
+  const telegram = inTelegram();
 
-  if (inTelegram()) {
-    return (
-      <div className="web-gate">
-        <div className="card web-gate__card">
-          <h2 className="web-gate__title">{tw("web.telegram.title")}</h2>
-          <p>{tw("web.tg.reopen")}</p>
-          <Button variant="secondary" onClick={() => window.Telegram?.WebApp?.close()}>
-            {tw("web.close")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!telegram) void recentEmails.list().then(setKnown);
+  }, [telegram]);
+
+  const forgetEmail = (value: string) => {
+    void recentEmails.forget(value).then(() => recentEmails.list().then(setKnown));
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -50,10 +78,9 @@ const Login = () => {
     try {
       await login(email.trim(), password);
     } catch (err) {
-      // Read exactly as the desktop's sign-in reads it: a block by its key,
-      // wrong credentials as one sentence (never which half was wrong), and
-      // anything else — "no web access for this account" — in the server's
-      // own words, already in the requested language.
+      // Read exactly as the desktop's sign-in reads it: a block by its key; a
+      // coded refusal ("no web access", "owners only") in the server's own
+      // words; wrong credentials as one sentence, never which half was wrong.
       const status = (err as ApiError | undefined)?.status;
       const blockedKey = blockingKeyOf(err);
       if (blockedKey) setError(t(blockedKey));
@@ -66,52 +93,82 @@ const Login = () => {
   };
 
   return (
-    <div className="web-gate">
-      <form className="card web-gate__card" onSubmit={submit} noValidate>
-        <div className="web-gate__langs" role="group" aria-label="Language">
-          {LANGUAGES.map((l) => (
-            <button
-              key={l.code}
-              type="button"
-              className={`web-gate__lang${l.code === lang ? " is-active" : ""}`}
-              aria-pressed={l.code === lang}
-              onClick={() => setLang(l.code)}
-            >
-              {l.name}
-            </button>
-          ))}
+    <div className="login-shell web-login">
+      {motion && (
+        <SceneGuard>
+          <Suspense fallback={null}>
+            <LoginScene />
+          </Suspense>
+        </SceneGuard>
+      )}
+
+      <div className="login-lang" role="group" aria-label="Language">
+        {LANGUAGES.map((l) => (
+          <button
+            key={l.code}
+            type="button"
+            className={`login-lang-pill${lang === l.code ? " active" : ""}`}
+            onClick={() => setLang(l.code)}
+            aria-label={l.name}
+            aria-pressed={lang === l.code}
+          >
+            {LANG_LABEL[l.code] ?? l.code.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      <div className="login-stage">
+        <div className="login-brand-wrap">
+          <HudBackdrop />
+          <h1 className="login-brand">Cyber Place</h1>
         </div>
-        <img className="web-gate__logo" src="./logo.png" alt="Cyber Place" />
-        <h2 className="web-gate__title">{tw("web.signIn.title")}</h2>
-        <p className="muted">{tw("web.signIn.subtitle")}</p>
-        <Input
-          label={tw("web.signIn.email")}
-          type="email"
-          autoComplete="username"
-          inputMode="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <Input
-          label={tw("web.signIn.password")}
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        {error && (
-          <div className="error" role="alert">
-            {error}
+        <img className="login-logo" src="./logo.png" alt="" />
+        <h2 className="login-title">{telegram ? tw("web.telegram.title") : tw("web.signIn.title")}</h2>
+
+        {telegram ? (
+          <div className="login-card web-login__card">
+            <p className="web-login__note">{tw("web.tg.reopen")}</p>
+            <Button type="button" onClick={() => window.Telegram?.WebApp?.close()}>
+              {tw("web.close")}
+            </Button>
           </div>
+        ) : (
+          <form className="login-card web-login__card" onSubmit={submit} noValidate>
+            <SuggestInput
+              label={t("auth.email")}
+              type="email"
+              inputMode="email"
+              autoComplete="username"
+              placeholder="your@email.com"
+              value={email}
+              onValueChange={setEmail}
+              options={known}
+              onRemoveOption={forgetEmail}
+              removeHint={t("login.forgetEmail")}
+              required
+              autoFocus
+            />
+            <PasswordInput
+              label={t("auth.password")}
+              placeholder={t("login.passwordPlaceholder")}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            {error && (
+              <div className="error web-login__error" role="alert">
+                {error}
+              </div>
+            )}
+            <Button disabled={busy || email.trim() === "" || password === ""}>
+              {busy ? t("login.signingIn") : t("login.title")}
+            </Button>
+            <p className="web-login__note">{tw("web.signIn.accessNote")}</p>
+            <p className="web-login__note">{tw("web.signIn.forgot")}</p>
+          </form>
         )}
-        <Button type="submit" disabled={busy || email.trim() === "" || password === ""}>
-          {busy ? tw("web.signIn.busy") : tw("web.signIn.submit")}
-        </Button>
-        <p className="muted web-gate__note">{tw("web.signIn.accessNote")}</p>
-        <p className="muted web-gate__note">{tw("web.signIn.forgot")}</p>
-      </form>
+      </div>
     </div>
   );
 };

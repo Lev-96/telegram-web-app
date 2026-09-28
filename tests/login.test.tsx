@@ -19,7 +19,7 @@ const submit = async (error: Error) => {
   const { container } = render(<Login />);
   fireEvent.change(container.querySelector('input[type="email"]')!, { target: { value: "o@example.test" } });
   fireEvent.change(container.querySelector('input[type="password"]')!, { target: { value: "pw" } });
-  fireEvent.click(screen.getByRole("button", { name: "Войти" }));
+  fireEvent.submit(container.querySelector("form")!);
   return (await screen.findByRole("alert")).textContent;
 };
 
