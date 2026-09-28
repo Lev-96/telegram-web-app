@@ -6,11 +6,14 @@
  * Inside Telegram there is no password to type: a Telegram session that ended
  * is renewed by opening the Mini App again, so that is what this screen says.
  */
+import { blockingKeyOf } from "@/api/blockingErrors";
+import type { ApiError } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useLang } from "@/i18n/LanguageContext";
 import { LANGUAGES } from "@/i18n/translations";
+import { errorCode } from "@web/telegram/telegram";
 import { useWebText } from "@web/web/i18n";
 import { FormEvent, useState } from "react";
 
@@ -18,7 +21,7 @@ const inTelegram = () => document.documentElement.dataset.shell === "telegram";
 
 const Login = () => {
   const { login } = useAuth();
-  const { lang, setLang } = useLang();
+  const { lang, setLang, t } = useLang();
   const tw = useWebText();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,9 +50,16 @@ const Login = () => {
     try {
       await login(email.trim(), password);
     } catch (err) {
-      // The server's own sentence, already in the requested language:
-      // wrong password, not granted, company closed.
-      setError(err instanceof Error ? err.message : String(err));
+      // Read exactly as the desktop's sign-in reads it: a block by its key,
+      // wrong credentials as one sentence (never which half was wrong), and
+      // anything else — "no web access for this account" — in the server's
+      // own words, already in the requested language.
+      const status = (err as ApiError | undefined)?.status;
+      const blockedKey = blockingKeyOf(err);
+      if (blockedKey) setError(t(blockedKey));
+      else if (errorCode(err) && err instanceof Error) setError(err.message);
+      else if (status === 401 || status === 422) setError(t("login.invalidCredentials"));
+      else setError(err instanceof Error ? err.message : t("login.failed"));
     } finally {
       setBusy(false);
     }
