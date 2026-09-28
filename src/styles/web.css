@@ -304,3 +304,84 @@
     max-width: 100%;
   }
 }
+
+/*
+ * Phones and tablets: the panel's screens were drawn for a mouse on a 1280px+
+ * window. Nothing here changes a screen's content or behaviour — only its
+ * frame and its hit areas — and everything is under .web-shell, so the
+ * desktop app (which never mounts it) is untouched.
+ */
+
+/* Narrow: give the width back to the content. */
+@media (max-width: 899px) {
+  /* The background frame's 32px sides and the section's 24px indent cost a
+     phone almost a quarter of its width. */
+  .web-shell .screen-bg {
+    padding: 16px 12px;
+  }
+
+  .web-shell .gradient-card-inner {
+    padding: 14px;
+  }
+
+  .web-shell .cp-section-inner {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* A list row puts its actions under the name when both do not fit,
+     instead of squeezing the name into a sliver beside three buttons. */
+  .web-shell .list-item {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  .web-shell .list-item > .row {
+    flex-wrap: wrap;
+  }
+}
+
+/* Touch: every control big enough for a finger (≈40px). */
+@media (pointer: coarse) {
+  /* :root[data-shell] is set by this app only (web or telegram), and
+     reaches the dialogs too: they render outside .web-shell, into <body>. */
+  :root[data-shell] .btn,
+  .web-shell .session-card__btn.btn {
+    min-height: 40px;
+  }
+
+  /* The session card fixes its buttons at 32px so a grid of cards lines up;
+     on touch they line up at 40px. */
+  .web-shell .session-card__btn.btn {
+    height: 40px;
+  }
+
+  .web-shell .place-cell .cell-actions .btn {
+    min-width: 40px;
+  }
+
+  .web-shell .pill {
+    min-height: 36px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .web-shell select.input.pad-select,
+  .web-shell .pad-select {
+    min-height: 36px;
+  }
+
+  .web-shell .leaflet-touch .leaflet-bar a {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+  }
+
+  /* iOS zooms the whole page into any field whose text is under 16px and
+     leaves it zoomed; at 16px it does not. */
+  :root[data-shell] input,
+  :root[data-shell] select,
+  :root[data-shell] textarea {
+    font-size: 16px;
+  }
+}
