@@ -60,22 +60,31 @@ fetch-panel`) for how its screens work, and the backend's for the API.
 
 | | staging | production |
 |---|---|---|
-| branch | `staging` | `master` |
-| `VITE_BACKEND_URL` (build) | staging backend | production backend |
-| `BACKEND_ORIGIN` (Caddy) | same origin | same origin |
+| Railway service | `cyber-place-owner-web` | `telegram-web-app` |
+| branch | `staging` | `main` |
+| domain | `staging.owner.cyberplace.pro` | `owner.cyberplace.pro` |
+| `VITE_BACKEND_URL` (build), `BACKEND_ORIGIN` (Caddy) | staging backend | production backend |
 | `REVERB_ORIGIN` (Caddy) | `wss://` staging Reverb | `wss://` production Reverb |
 | Telegram bot | the staging bot | the production bot |
+| Under Attack Mode | off | owner's choice (on = browser check; non-browser clients get 429) |
+
+Production is `main` here (the owner's choice for this repo). It goes live only
+when `staging` is merged into `main` on the owner's word, and only together
+with the backend release that carries `/owner-web/*` and `/telegram/*`.
 
 The backend of each environment holds its own `TELEGRAM_OWNER_BOT_TOKEN`,
 `TELEGRAM_OWNER_BOT_USERNAME`, `TELEGRAM_OWNER_APP_SHORT_NAME`. Never point a
 production bot at staging. Railway does not expand `${VAR}`: literal values.
 
-`Caddyfile` serves `dist/`: SPA fallback, internal paths 404, CSP as an HTTP
-header (only there does `frame-ancestors` work; it admits Telegram's web
-clients and nobody else), HSTS, nosniff, no-referrer.
+`Caddyfile` serves `dist/` as an allowlist: only GET/HEAD (405 otherwise) and
+only the page and its built files (`/`, `/index.html`, `/logo.png`,
+`/assets/*`, `/fonts/*`, `/bg/*` — the app routes by hash); everything else is
+404. CSP as an HTTP header (only there does `frame-ancestors` work; it admits
+Telegram's web clients and nobody else), HSTS, nosniff, no-referrer, CORP.
+Add a new top-level public file? Add its path to the `@app` matcher.
 
 ## Checks
 
 `npm run typecheck`, `npm test` (vitest), `npm run build`. The backend side is
 covered by `tests/Feature/OwnerWebAccessTest.php` and friends there. Commits
-go to `staging`; production is promoted by the owner.
+go to `staging`; production (`main`) is promoted by the owner.
