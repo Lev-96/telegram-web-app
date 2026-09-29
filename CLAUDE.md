@@ -38,13 +38,14 @@ fetch-panel`) for how its screens work, and the backend's for the API.
 
 ## Security model (server-side; see backend `config/client_access.php`)
 
-- Knowing the URL gives a sign-in form and nothing else. An admin grants an
-  owner or a manager `owner_web`, and an owner `telegram` access (`php artisan client-access grant
-  <email> <client>` or `PUT /admin/owners/{id}/client-access/{client}`).
+- Knowing the URL gives a sign-in form and nothing else. Access follows the
+  role (since 2026-09-29, nothing is granted per person): every company owner
+  has the web and Telegram, every manager the web. The sign-in screen says
+  nothing about an administrator giving access.
 - Tokens from `/owner-web/session/login` and `/telegram/mini-app/session`
   carry a `client:*` ability, expire (30 days web / 8h Telegram), die when
-  idle (14 days web / 60 min Telegram), on revoke, on an admin block and on a
-  password reset. Switching accounts on the web is a new web sign-in: the
+  idle (14 days web / 60 min Telegram), on an admin block, on unlinking
+  Telegram and on a password reset. Switching accounts on the web is a new web sign-in: the
   server deletes the web token the browser held. They may not call the routes
   in `denied_routes` (logout-all, admin, password/email
   change, creating or writing managers/users, deleting a company, unlock PIN,
