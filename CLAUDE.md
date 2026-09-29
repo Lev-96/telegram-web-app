@@ -23,7 +23,7 @@ fetch-panel`) for how its screens work, and the backend's for the API.
   |---|---|
   | `@/api/auth` | sign in/out through `/owner-web/session/*`; the desktop's `/session/logout` deletes EVERY token of the user, the desktop's included |
   | `@/infrastructure/KeyValueStore` | web: everything in `localStorage`, so a sign-in survives closing the browser (bounded by the server's 30-day lifetime / 14-day idle); Telegram: the session in `sessionStorage` |
-  | `@/components/Layout` | a shell that works from 360px (drawer + top bar); mounts every notifier the desktop shell mounts |
+  | `@/components/Layout` | a shell that works from 360px: below 900px a 52px top bar with the menu button and logo on the LEFT, and a drawer; mounts every notifier the desktop shell mounts. "Telegram" is a card in the menu (panel Sidebar's `footerExtra` slot, `src/web/TelegramMenuEntry.tsx`), for an owner in a browser only; no top-bar or corner button |
   | `@/routes/Login` | the desktop's sign-in pieces incl. the forgot-password flip (`#/forgot-password`); a language pill hands the choice to the next account (`notePreLoginChoice`); in Telegram it says "reopen from the bot" |
   | `@/routes/ResetPassword` | the mailed reset link's screen: no token field, the secret dropped from the URL, one way forward from a dead link. `main.tsx` renders it STANDALONE when opened on `#/reset-password` — signed in or not — because the panel's signed-in routes would send the link to the dashboard |
   | `@/telemetry/TelemetryTracker` | desktop telemetry must not count web traffic |
@@ -91,3 +91,15 @@ Add a new top-level public file? Add its path to the `@app` matcher.
 `npm run typecheck`, `npm test` (vitest), `npm run build`. The backend side is
 covered by `tests/Feature/OwnerWebAccessTest.php` and friends there. Commits
 go to `staging`; production (`main`) is promoted by the owner.
+
+## Phone sizing (2026-09-29)
+
+`src/styles/web.css`, `@media (max-width: 599px)`: page titles 19px, h3 15px,
+the home greeting 24px, cards 12px padding, stat tiles two per row, home link
+cards one per row, a smaller login composition (`--ring-size` from 60vw /
+34dvh, 15px title, 52px logo) and compact language pills with a 40px hit
+area. Touch rules keep every pressed control ≥ 40px; a status `.pill` is a
+label and keeps its own size (only `button.pill` / `a.pill` grow). Verified
+headless at 360/390/768/1280 with 0px page overflow; screenshots in
+`~/cyber-place-local/reports/owner-web-mobile-2026-09-29/`.
+
