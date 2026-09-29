@@ -126,3 +126,13 @@ button sticks at `top: 8px`. Reproduced and verified in Chromium by forcing
 the shell 80px taller than the screen: before, 0 of 40px of the button
 visible; after, 40 of 40, document scroll 0, bottom of `.main` reachable.
 
+## Opening the Mini App without START (2026-09-29)
+
+The access dialog shows "Open in Telegram" for a usable link: the backend's
+`telegram.open_url` (`t.me/<bot>/<app>` or `t.me/<bot>?startapp`) opens the
+Mini App directly, in a new tab, with no chat START; the client never builds
+it. Inside Telegram a linked owner also has a launcher button in the bot's
+chat (set by the backend, `TelegramOwnerBot`). Bot setup per environment:
+backend `php artisan telegram:owner-bot setup`, plus BotFather's Main Mini
+App URL = this app's address.
+
