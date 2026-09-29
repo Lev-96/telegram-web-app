@@ -24,37 +24,32 @@
   height: 100%;
 }
 
-/* ── wide: the desktop's grid; the top bar shrinks to one corner button ── */
-.web-topbar {
-  position: fixed;
-  top: 12px;
-  right: 20px;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+/* ── wide: the desktop's grid; the sidebar is always there, no top bar ── */
+.web-topbar,
 .web-topbar__menu,
 .web-topbar__logo,
 .web-drawer-backdrop {
   display: none;
 }
 
-.web-topbar__action {
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: 13px;
+/* The Telegram card in the menu is a <button> dressed as Support's card
+   (.nav-support-card): the same box, left-aligned, the page's font. */
+.web-telegram-entry {
+  width: 100%;
+  font: inherit;
+  font-weight: 500;
+  color: var(--color-muted);
+  text-align: left;
   cursor: pointer;
 }
 
-.web-topbar__action:hover,
-.web-topbar__action:focus-visible {
-  border-color: var(--color-primary);
-  outline: none;
+.web-telegram-entry .nav-support-card__icon {
+  color: var(--color-primary);
+}
+
+.web-telegram-entry:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* ── narrow: top bar + drawer ─────────────────────────────────────────── */
@@ -64,15 +59,21 @@
     grid-template-rows: auto 1fr;
   }
 
+  /* Menu button and logo together on the left, where the drawer opens. */
   .web-topbar {
     position: sticky;
     top: 0;
-    right: auto;
+    z-index: 20;
     grid-column: 1;
     grid-row: 1;
-    justify-content: space-between;
-    padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
-    padding-top: max(8px, env(safe-area-inset-top));
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 52px;
+    box-sizing: border-box;
+    padding: 6px max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left));
+    padding-top: max(6px, env(safe-area-inset-top));
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
   }
@@ -82,8 +83,8 @@
     flex-direction: column;
     justify-content: center;
     gap: 4px;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     padding: 0 10px;
     border: 1px solid var(--color-border);
     border-radius: 10px;
@@ -100,13 +101,8 @@
 
   .web-topbar__logo {
     display: block;
-    height: 28px;
+    height: 26px;
     width: auto;
-  }
-
-  /* A finger-sized target, level with the 44px menu button beside it. */
-  .web-topbar__action {
-    min-height: 40px;
   }
 
   .web-shell .main {
@@ -365,7 +361,10 @@
     min-width: 40px;
   }
 
-  .web-shell .pill {
+  /* Only a pill that is pressed grows: a status pill ("Active") is a label
+     and keeps its own size. */
+  .web-shell button.pill,
+  .web-shell a.pill {
     min-height: 40px;
     padding-left: 14px;
     padding-right: 14px;
@@ -452,8 +451,7 @@
 
 /* ── notices: one stack instead of four self-placed toasts ─────────────── */
 /* Each notifier pins its toast top-right at its own offset (16px or 96px).
-   On the web that lands on the top bar's Telegram button (wide) and on the
-   page title and first controls (narrow), and two toasts can overlap. Here
+   On the web that lands on the page title and first controls, and two toasts can overlap. Here
    they sit in one column; each toast keeps its own look and max width.
    `!important` only on `position`: the toasts set it inline, and the panel
    is not edited from here. */
@@ -465,7 +463,7 @@
   align-items: flex-end;
   gap: 8px;
   pointer-events: none;
-  top: 64px;
+  top: 16px;
   right: 16px;
   width: min(360px, calc(100vw - 32px));
 }
@@ -612,5 +610,116 @@
   .web-shell .web-drawer .sidebar-nav {
     flex: none;
     overflow: visible;
+  }
+}
+
+/*
+ * Phones (≤ 599px), 2026-09-29: the panel's screens are sized for a 1280px
+ * window, which on a phone reads as everything too big. Here the type and the
+ * spacing step down to a phone's scale — 19px page titles, 13–14px body, 12px
+ * card padding, stats two to a row — while every control a finger presses
+ * keeps its 40px (the touch rules above). Only sizes; no screen's content,
+ * order or behaviour changes.
+ */
+@media (max-width: 599px) {
+  .web-shell .main {
+    padding-top: 12px;
+  }
+
+  .web-shell .screen-bg {
+    padding: 12px 10px;
+  }
+
+  .web-shell .page-title,
+  .web-shell .main h2 {
+    font-size: 19px;
+    line-height: 1.25;
+  }
+
+  .web-shell .page-title {
+    margin-bottom: 12px;
+  }
+
+  .web-shell .main h3 {
+    font-size: 15px;
+  }
+
+  /* The greeting on the home screen is set inline at 32px. */
+  .web-shell .gradient-text[style*="font-size: 32px"] {
+    font-size: 24px !important;
+  }
+
+  .web-shell .card,
+  .web-shell .gradient-card-inner {
+    padding: 12px;
+  }
+
+  .web-shell .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .web-shell .stat-tile {
+    padding: 10px 12px;
+    gap: 4px;
+  }
+
+  .web-shell .stat-tile .k {
+    font-size: 10.5px;
+  }
+
+  .web-shell .stat-tile .v {
+    font-size: 20px;
+  }
+
+  /* Home's link cards carry an inline 220px minimum; one per row here. */
+  .web-shell .row > a.card {
+    flex: 1 1 100%;
+    min-width: 0 !important;
+  }
+
+  .web-shell .sidebar {
+    padding: 14px 10px;
+  }
+
+  .web-shell .sidebar-nav a {
+    font-size: 14px;
+  }
+
+  /* ── sign-in, forgot and reset on a phone ─────────────────────────────
+     The ring, the wordmark and the logo all scale from --ring-size, so one
+     smaller value makes the whole composition phone-sized; the form keeps a
+     thumb-friendly width. The language pills look smaller and keep a 40px
+     hit area. */
+  .login-shell.web-login {
+    --ring-size: clamp(200px, min(60vw, 34dvh), 620px);
+    padding-top: max(64px, env(safe-area-inset-top));
+  }
+
+  .login-shell.web-login .login-lang-pill {
+    position: relative;
+    min-height: 32px;
+    min-width: 44px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+  }
+
+  .login-shell.web-login .login-lang-pill::after {
+    content: "";
+    position: absolute;
+    inset: -4px -2px;
+  }
+
+  .login-shell.web-login .login-card {
+    gap: 12px;
+  }
+
+  /* Scaled from the smaller ring these would drop to 10px; they stay legible. */
+  .login-shell.web-login .login-title {
+    font-size: 15px;
+  }
+
+  .login-shell.web-login .login-logo {
+    width: 52px;
   }
 }
