@@ -25,6 +25,7 @@ fetch-panel`) for how its screens work, and the backend's for the API.
   | `@/infrastructure/KeyValueStore` | web: everything in `localStorage`, so a sign-in survives closing the browser (bounded by the server's 30-day lifetime / 14-day idle); Telegram: the session in `sessionStorage` |
   | `@/components/Layout` | a shell that works from 360px: below 900px a 52px top bar with the logo on the LEFT and the menu button on the RIGHT, and a drawer that slides in from the right; mounts every notifier the desktop shell mounts. "Telegram" is a card in the menu (panel Sidebar's `footerExtra` slot, `src/web/TelegramMenuEntry.tsx`), for an owner in a browser only; no top-bar or corner button |
   | `@/routes/Login` | the desktop's sign-in pieces incl. the forgot-password flip (`#/forgot-password`); a language pill hands the choice to the next account (`notePreLoginChoice`); in Telegram it says "reopen from the bot" |
+  | `@/i18n/languagePreference` | the account's language is ALSO kept on the server (`GET/PUT /user/locale`), so it is asked once per account — never again on another device or after Telegram wipes its storage; before any choice the sign-in opens in Telegram's / the browser's language |
   | `@/routes/ResetPassword` | the mailed reset link's screen: no token field, the secret dropped from the URL, one way forward from a dead link. `main.tsx` renders it STANDALONE when opened on `#/reset-password` — signed in or not — because the panel's signed-in routes would send the link to the dashboard |
   | `@/telemetry/TelemetryTracker` | desktop telemetry must not count web traffic |
 
@@ -154,4 +155,21 @@ confirm who you are") right after "Continue" (2026-09-30).
 
 Bot setup per environment: backend `php artisan telegram:owner-bot setup`,
 plus BotFather's Main Mini App URL = this app's address.
+
+## Language: asked once per account (2026-09-30)
+
+`main.tsx` mounts no pre-sign-in language picker (the panel's
+`FirstRunLanguageGate`): the sign-in screen has its language pills, Telegram
+signs in by itself, and with both pickers Telegram opened them on top of each
+other (the account's opened behind the first while the sign-in finished). What
+is left is the panel's `AccountLanguageGate`, fed by
+`overrides/languagePreference.ts`: the account's language from the device, else
+from the server (`/user/locale`), else — once — the picker, whose answer is
+written to both. A language pill tapped on the sign-in screen is handed to the
+account instead of asking. Verified in a browser (simulated Telegram launch with
+a real signature): first Telegram launch one picker then the owner's page;
+reopen, reopen with wiped storage, the web on two new devices: no picker.
+
+This relies on the panel's `LanguageContext` importing `@/i18n/languagePreference`
+by alias (changed 2026-09-30); a relative import cannot be overridden here.
 
