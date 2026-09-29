@@ -2,7 +2,6 @@ import App from "@/App";
 import { AuthProvider } from "@/auth/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { LanguageProvider } from "@/i18n/LanguageContext";
-import { FirstRunLanguageGate } from "@/i18n/LanguageGates";
 import "@/styles/global.css";
 import "@web/styles/web.css";
 import TelegramGate from "@web/telegram/TelegramGate";
@@ -44,7 +43,12 @@ createRoot(root).render(
   <StrictMode>
     <ErrorBoundary>
       <LanguageProvider>
-        <FirstRunLanguageGate>{launch ? <TelegramGate launch={launch}>{panel}</TelegramGate> : panel}</FirstRunLanguageGate>
+        {/* No pre-sign-in language picker here (2026-09-30): the sign-in
+            screen has its language pills, Telegram signs in by itself, and
+            the account's language — asked once per account, kept on the
+            server (overrides/languagePreference.ts) — follows the sign-in.
+            With both pickers, Telegram opened them on top of each other. */}
+        {launch ? <TelegramGate launch={launch}>{panel}</TelegramGate> : panel}
       </LanguageProvider>
     </ErrorBoundary>
   </StrictMode>,

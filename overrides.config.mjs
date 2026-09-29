@@ -19,6 +19,9 @@ export const overrides = {
   // The reset screen the mailed link opens: no token field, the secret is
   // dropped from the address bar, one way forward from a dead link.
   "@/routes/ResetPassword": "src/overrides/ResetPassword.tsx",
+  // The account's language is kept on the server too, so it is asked once per
+  // account; before a choice, the sign-in opens in Telegram's / the browser's.
+  "@/i18n/languagePreference": "src/overrides/languagePreference.ts",
   // Desktop-panel telemetry must not count browser traffic as the desktop's.
   "@/telemetry/TelemetryTracker": "src/overrides/TelemetryTracker.tsx",
 };

@@ -21,6 +21,7 @@
       "@/components/Layout": ["src/overrides/Layout.tsx"],
       "@/routes/Login": ["src/overrides/Login.tsx"],
       "@/routes/ResetPassword": ["src/overrides/ResetPassword.tsx"],
+      "@/i18n/languagePreference": ["src/overrides/languagePreference.ts"],
       "@/telemetry/TelemetryTracker": ["src/overrides/TelemetryTracker.tsx"],
       "@web/*": ["src/*"],
       "@/*": ["vendor/panel/src/*"]
