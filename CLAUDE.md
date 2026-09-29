@@ -143,7 +143,14 @@ screen) and renews it 30 s before it expires, because a phone opens the
 Telegram app from a link only when the tap follows a real link — a link
 fetched after the tap shows the t.me page instead. A tap before it is ready
 opens a tab inside the tap and sends it there when the link arrives. Later
-launches from the bot's chat launcher use `/telegram/mini-app/session`.
+launches from the bot (its START / "Open Cyber Place" button, or the chat's
+launcher) use `/telegram/mini-app/session` and sign in by themselves.
+
+`TelegramGate` trades a launch for a session ONCE per launch
+(`exchangeLaunch`, module-level), not once per mount: the server accepts a
+launch once, and the first-run language picker re-mounts the gate when a
+language is chosen — the second exchange used to be refused ("Telegram did not
+confirm who you are") right after "Continue" (2026-09-30).
 
 Bot setup per environment: backend `php artisan telegram:owner-bot setup`,
 plus BotFather's Main Mini App URL = this app's address.
