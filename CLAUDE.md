@@ -103,3 +103,14 @@ label and keeps its own size (only `button.pill` / `a.pill` grow). Verified
 headless at 360/390/768/1280 with 0px page overflow; screenshots in
 `~/cyber-place-local/reports/owner-web-mobile-2026-09-29/`.
 
+## Page zoom is locked on touch screens (2026-09-29)
+
+No pinch or double-tap zoom on phones/tablets, in a browser or Telegram:
+index.html viewport `maximum-scale=1, user-scalable=no` (Chromium: Android,
+Telegram Android), web.css `:root[data-shell] { touch-action: pan-x pan-y }`
+(iOS double-tap), `src/web/pageZoom.ts` cancelling `gesture*` events (iOS
+pinch; installed only when `(pointer: coarse)`, so desktop trackpad zoom stays).
+Measured with real two-finger touch in Chromium: a control page pinches to 5x,
+the app stays 1x; the branch map still pinch-zooms (Leaflet, 12 -> 15);
+touch scrolling works. iOS layers are unit-tested only, not on a device.
+
