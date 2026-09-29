@@ -22,9 +22,10 @@ fetch-panel`) for how its screens work, and the backend's for the API.
   | Panel module | Replaced because |
   |---|---|
   | `@/api/auth` | sign in/out through `/owner-web/session/*`; the desktop's `/session/logout` deletes EVERY token of the user, the desktop's included |
-  | `@/infrastructure/KeyValueStore` | the session token lives in `sessionStorage` |
+  | `@/infrastructure/KeyValueStore` | web: everything in `localStorage`, so a sign-in survives closing the browser (bounded by the server's 30-day lifetime / 14-day idle); Telegram: the session in `sessionStorage` |
   | `@/components/Layout` | a shell that works from 360px (drawer + top bar); mounts every notifier the desktop shell mounts |
-  | `@/routes/Login` | a light sign-in (no three.js); in Telegram it says "reopen from the bot" |
+  | `@/routes/Login` | the desktop's sign-in pieces incl. the forgot-password flip (`#/forgot-password`); a language pill hands the choice to the next account (`notePreLoginChoice`); in Telegram it says "reopen from the bot" |
+  | `@/routes/ResetPassword` | the mailed reset link's screen: no token field, the secret dropped from the URL, one way forward from a dead link. `main.tsx` renders it STANDALONE when opened on `#/reset-password` — signed in or not — because the panel's signed-in routes would send the link to the dashboard |
   | `@/telemetry/TelemetryTracker` | desktop telemetry must not count web traffic |
 
   Replace a module only when the web truly differs, and only by alias: a
@@ -38,12 +39,14 @@ fetch-panel`) for how its screens work, and the backend's for the API.
 ## Security model (server-side; see backend `config/client_access.php`)
 
 - Knowing the URL gives a sign-in form and nothing else. An admin grants an
-  OWNER `owner_web` and/or `telegram` access (`php artisan client-access grant
+  owner or a manager `owner_web`, and an owner `telegram` access (`php artisan client-access grant
   <email> <client>` or `PUT /admin/owners/{id}/client-access/{client}`).
 - Tokens from `/owner-web/session/login` and `/telegram/mini-app/session`
-  carry a `client:*` ability, expire (12h web / 8h Telegram), die after 60
-  idle minutes, die on revoke or an admin block, and may not call the routes
-  in `denied_routes` (logout-all, account switch, admin, password/email
+  carry a `client:*` ability, expire (30 days web / 8h Telegram), die when
+  idle (14 days web / 60 min Telegram), on revoke, on an admin block and on a
+  password reset. Switching accounts on the web is a new web sign-in: the
+  server deletes the web token the browser held. They may not call the routes
+  in `denied_routes` (logout-all, admin, password/email
   change, creating or writing managers/users, deleting a company, unlock PIN,
   agent token rotation, Wake-on-LAN, PS5 wake events). Those screens still
   render from the panel's code; the server refuses the write with a sentence.
