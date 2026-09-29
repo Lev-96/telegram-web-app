@@ -7,7 +7,8 @@
  * the owner is told the same things whichever window they work in.
  *
  * What differs is the frame: below 900px the sidebar becomes a drawer behind a
- * top bar (menu button and logo, left), so the same screens fit a phone and
+ * top bar (logo on the left, menu button on the right; the drawer opens from
+ * the right, under the thumb), so the same screens fit a phone and
  * Telegram's narrow view. In a browser an owner's menu also carries a
  * "Telegram" card (Sidebar's footer slot) that opens their Telegram access;
  * a manager never has Telegram, and inside Telegram it would be circular.
@@ -58,6 +59,7 @@ const Layout = () => {
     <Ps5ControlProvider>
       <div className={`app-shell web-shell${drawer ? " is-drawer-open" : ""}`}>
         <header className="web-topbar">
+          <img className="web-topbar__logo" src="./logo.png" alt="Cyber Place" />
           <button
             type="button"
             className="web-topbar__menu"
@@ -69,7 +71,6 @@ const Layout = () => {
             <span aria-hidden="true" />
             <span aria-hidden="true" />
           </button>
-          <img className="web-topbar__logo" src="./logo.png" alt="Cyber Place" />
         </header>
         <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />
         <div className="web-drawer">

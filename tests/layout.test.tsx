@@ -5,7 +5,8 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
- * The web shell's frame (2026-09-29): menu button and logo on the left, and
+ * The web shell's frame (2026-09-29): logo on the left, menu button on the
+ * right, and
  * "Telegram" as a card in the menu — for an owner in a browser only.
  */
 
@@ -50,11 +51,11 @@ afterEach(() => {
 });
 
 describe("web shell frame", () => {
-  it("puts the menu button and the logo in the top bar, and nothing else", () => {
+  it("puts the logo first (left) and the menu button last (right), and nothing else", () => {
     document.documentElement.dataset.shell = "web";
     const { container } = mount();
     const bar = container.querySelector(".web-topbar")!;
-    expect([...bar.children].map((el) => el.className)).toEqual(["web-topbar__menu", "web-topbar__logo"]);
+    expect([...bar.children].map((el) => el.className)).toEqual(["web-topbar__logo", "web-topbar__menu"]);
   });
 
   it("gives an owner a Telegram card in the menu that opens the access dialog and closes the drawer", () => {
