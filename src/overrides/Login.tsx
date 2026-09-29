@@ -195,7 +195,6 @@ const Login = () => {
                 <Button disabled={busy || email.trim() === "" || password === ""}>
                   {busy ? t("login.signingIn") : t("login.title")}
                 </Button>
-                <p className="web-login__note">{tw("web.signIn.accessNote")}</p>
               </form>
 
               {/* The reverse face; `inert` keeps the hidden side out of the tab order. */}

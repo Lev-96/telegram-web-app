@@ -5,7 +5,7 @@
  * fallback, so a sign-in survives closing the browser the way the desktop's
  * does (2026-09-29). What keeps that safe is on the server, not here: the web
  * token expires (30 days), dies after 14 idle days, is deleted by sign-out,
- * by an account switch, by a password reset and by an administrator's revoke.
+ * by an account switch, by a password reset and by an administrator's block.
  *
  * Inside Telegram the session — the token and the signed-in user — stays in
  * sessionStorage: opening the Mini App signs in again from Telegram's own

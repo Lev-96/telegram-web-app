@@ -42,11 +42,6 @@ describe("web sign-in errors, read as the desktop reads them", () => {
     expect(await submit(fail(422, { errors: { password: ["Invalid password"] } }))).toBe("Неверный логин или пароль");
   });
 
-  it("no web access: the server's own sentence", async () => {
-    const text = "Этому аккаунту не выдан доступ через браузер и Telegram.";
-    expect(await submit(fail(403, { message: text, code: "client_access_not_granted" }, text))).toBe(text);
-  });
-
   it("a role the web does not serve: the server's sentence, not 'wrong password'", async () => {
     const text = "Для роли этого аккаунта такой способ входа недоступен.";
     expect(await submit(fail(403, { message: text, code: "client_access_role_not_allowed" }, text))).toBe(text);
@@ -67,6 +62,11 @@ describe("web sign-in errors, read as the desktop reads them", () => {
 });
 
 describe("web sign-in card", () => {
+  it("does not say access is given by an administrator: every owner has it", () => {
+    const { container } = renderAt();
+    expect(container.textContent).not.toMatch(/администратор|Сам адрес/);
+  });
+
   it("turns over to the desktop's forgot-password form, and back", () => {
     const { container } = renderAt();
     expect(container.querySelector(".login-flip.is-back")).toBeNull();

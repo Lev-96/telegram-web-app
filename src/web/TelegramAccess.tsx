@@ -97,7 +97,8 @@ const TelegramAccess = ({ open, onClose }: { open: boolean; onClose: () => void 
   };
 
   const who = state?.telegram.username ? `@${state.telegram.username}` : tw("web.telegram.noUsername");
-  const granted = state?.clients.includes("telegram") ?? false;
+  // Telegram is an owner's: the server lists the clients the role has.
+  const allowed = state?.clients.includes("telegram") ?? false;
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -107,9 +108,9 @@ const TelegramAccess = ({ open, onClose }: { open: boolean; onClose: () => void 
         {!state && <Spinner />}
 
         {state && !state.telegram.enabled && <p>{tw("web.telegram.disabled")}</p>}
-        {state && state.telegram.enabled && !granted && <p>{tw("web.telegram.notGranted")}</p>}
+        {state && state.telegram.enabled && !allowed && <p>{tw("web.telegram.ownersOnly")}</p>}
 
-        {state && state.telegram.enabled && granted && state.telegram.status === "none" && (
+        {state && state.telegram.enabled && allowed && state.telegram.status === "none" && (
           <>
             <p>{tw("web.telegram.none")}</p>
             {link ? (
@@ -136,7 +137,7 @@ const TelegramAccess = ({ open, onClose }: { open: boolean; onClose: () => void 
           </>
         )}
 
-        {state && granted && state.telegram.status === "pending" && (
+        {state && allowed && state.telegram.status === "pending" && (
           <>
             <p>{tw("web.telegram.pending", who)}</p>
             <Input

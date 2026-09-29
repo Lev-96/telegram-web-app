@@ -21,11 +21,6 @@ export const WEB_TEXT = {
   "web.signIn.password": { en: "Password", ru: "Пароль", am: "Գաղտնաբառ" },
   "web.signIn.submit": { en: "Sign in", ru: "Войти", am: "Մուտք" },
   "web.signIn.busy": { en: "Signing in…", ru: "Вход…", am: "Մուտք…" },
-  "web.signIn.accessNote": {
-    en: "Access is given by the Cyber Place administrator. The address alone opens nothing.",
-    ru: "Доступ выдаёт администратор Cyber Place. Сам адрес ничего не открывает.",
-    am: "Մուտքը տրամադրում է Cyber Place-ի ադմինիստրատորը։ Միայն հասցեն ոչինչ չի բացում։",
-  },
   "web.reset.noLink": {
     en: "This reset link cannot be used. Ask for a new one.",
     ru: "Эта ссылка для сброса не работает. Запросите новую.",
@@ -47,10 +42,10 @@ export const WEB_TEXT = {
     am: "Աշխատանք բոտով",
   },
   "web.telegram.open": { en: "Telegram access", ru: "Доступ через Telegram", am: "Մուտք Telegram-ով" },
-  "web.telegram.notGranted": {
-    en: "Telegram access has not been given to this account. Ask your Cyber Place administrator.",
-    ru: "Этому аккаунту не выдан доступ через Telegram. Обратитесь к администратору Cyber Place.",
-    am: "Այս հաշվին Telegram-ով մուտք չի տրամադրվել։ Դիմեք Cyber Place-ի ադմինիստրատորին։",
+  "web.telegram.ownersOnly": {
+    en: "Telegram is available to company owners.",
+    ru: "Telegram доступен владельцам компаний.",
+    am: "Telegram-ը հասանելի է ընկերությունների սեփականատերերին։",
   },
   "web.telegram.disabled": {
     en: "Telegram is not set up on this server yet.",
