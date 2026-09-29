@@ -8,6 +8,7 @@ import "@web/styles/web.css";
 import TelegramGate from "@web/telegram/TelegramGate";
 import { prepareTelegramChrome, readTelegramLaunch } from "@web/telegram/telegram";
 import ResetPassword, { isResetLink } from "@web/overrides/ResetPassword";
+import { isTouchDevice, lockPageZoom } from "@web/web/pageZoom";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -22,6 +23,9 @@ if (launch) {
 } else {
   document.documentElement.dataset.shell = "web";
 }
+
+// Phones and tablets: the page stays at 100% (see pageZoom.ts).
+if (isTouchDevice()) lockPageZoom();
 
 // The panel's own tree — the same providers and the same App the desktop
 // renders — with the Telegram gate in front of it when opened from Telegram.

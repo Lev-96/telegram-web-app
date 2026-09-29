@@ -10,6 +10,17 @@
  *            Telegram's narrow view
  */
 
+/* The page stays at 100% on touch screens (see src/web/pageZoom.ts): this
+   rule stops iOS Safari's double-tap zoom; index.html's viewport stops pinch
+   in Chromium, and pageZoom.ts stops it in iOS Safari. Scrolling is
+   unaffected, and the map keeps its own pinch (Leaflet sets touch-action on
+   its container). Text is never enlarged by the browser on rotation. */
+:root[data-shell] {
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 /* Mobile browsers and Telegram: the visible height, not the layout height. */
 .web-shell {
   height: 100vh;
