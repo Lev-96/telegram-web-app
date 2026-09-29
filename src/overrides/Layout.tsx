@@ -71,11 +71,18 @@ const Layout = () => {
           <BackButton />
           <Outlet />
         </main>
-        <GlobalBookingNotifier />
-        <SupportNotifier />
-        <SessionEndingNotifier />
+        {/* The notifiers' toasts place themselves (fixed, top-right, each at
+            its own offset). On the web they sit in one stack instead, so they
+            cover neither the top bar nor, on a phone, the page title: see
+            .web-notices in web.css. Their dialogs portal to <body> and are
+            not affected. */}
+        <div className="web-notices">
+          <GlobalBookingNotifier />
+          <SupportNotifier />
+          <SessionEndingNotifier />
+          <ExpenseReminderNotifier />
+        </div>
         <UnexpectedWakeDialog />
-        <ExpenseReminderNotifier />
       </div>
       {!inTelegram() && <TelegramAccess open={telegram} onClose={() => setTelegram(false)} />}
     </Ps5ControlProvider>

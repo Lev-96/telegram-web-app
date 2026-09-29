@@ -104,6 +104,11 @@
     width: auto;
   }
 
+  /* A finger-sized target, level with the 44px menu button beside it. */
+  .web-topbar__action {
+    min-height: 40px;
+  }
+
   .web-shell .main {
     grid-column: 1;
     grid-row: 2;
@@ -361,7 +366,7 @@
   }
 
   .web-shell .pill {
-    min-height: 36px;
+    min-height: 40px;
     padding-left: 14px;
     padding-right: 14px;
   }
@@ -377,11 +382,235 @@
     line-height: 40px;
   }
 
+  /* The sticky Back pill, the drawer's links, the muted navigation links
+     (the board's History / Computers / Prices, "Back to company", "To the
+     board"), the support branch picker, the user menu's rows, the account
+     switcher's back arrow and the history's "show N more". */
+  .web-shell .cp-back-btn,
+  .web-shell .sidebar-nav a,
+  .web-shell a.muted,
+  .web-shell .support-branch-change,
+  .web-shell .hs-more,
+  :root[data-shell] .user-menu-view > button,
+  :root[data-shell] .cp-switch-back {
+    min-height: 40px;
+  }
+
+  :root[data-shell] .cp-switch-back {
+    min-width: 40px;
+  }
+
+  .web-shell a.muted {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* The toasts' own controls: the × (11×16) and "Add time" (27px). */
+  .web-notices [role="alert"] button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  /* The dialog × and the password eye keep their 28px look; the invisible
+     ring around them is what the finger hits (28 + 2 × 6 = 40). */
+  :root[data-shell] .cp-modal-close::after,
+  :root[data-shell] .pw-eye::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+
+  .login-shell.web-login .login-lang-pill {
+    min-height: 40px;
+    min-width: 48px;
+  }
+
   /* iOS zooms the whole page into any field whose text is under 16px and
      leaves it zoomed; at 16px it does not. */
   :root[data-shell] input,
   :root[data-shell] select,
   :root[data-shell] textarea {
     font-size: 16px;
+  }
+}
+
+/*
+ * Responsive pass (2026-09-29): every rule below answers a defect measured
+ * headless at 360–1920px against real data. Still only frame, hit areas and
+ * containment; no screen's content or behaviour changes.
+ */
+
+/* The page never scrolls sideways; wide content scrolls in its own box.
+   The first-run language picker blurs the sign-in screen behind it with
+   `transform: scale(1.03)` (panel .cp-inert-backdrop), and a transform counts
+   toward the document's scrollable width: 15–29px of sideways page scroll at
+   1024–1920px. Clipping #root removes it. Fixed elements (toasts, the drawer)
+   are not clipped: #root is not their containing block. */
+:root[data-shell] #root {
+  overflow-x: clip;
+}
+
+/* ── notices: one stack instead of four self-placed toasts ─────────────── */
+/* Each notifier pins its toast top-right at its own offset (16px or 96px).
+   On the web that lands on the top bar's Telegram button (wide) and on the
+   page title and first controls (narrow), and two toasts can overlap. Here
+   they sit in one column; each toast keeps its own look and max width.
+   `!important` only on `position`: the toasts set it inline, and the panel
+   is not edited from here. */
+.web-notices {
+  position: fixed;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+  top: 64px;
+  right: 16px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.web-notices > [role="alert"] {
+  position: static !important;
+  pointer-events: auto;
+}
+
+/* Narrow: at the bottom, above the home indicator, where the thumb is and
+   where they cover neither the title nor the page's primary action row. */
+@media (max-width: 899px) {
+  .web-notices {
+    top: auto;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    left: max(12px, env(safe-area-inset-left));
+    width: auto;
+  }
+
+  /* The open drawer is a modal layer: the notices go under its backdrop
+     (30) with the rest of the page instead of over its profile card and
+     sign-out, and come back when it closes. */
+  .web-shell.is-drawer-open .web-notices {
+    z-index: 20;
+  }
+}
+
+/* ── sign-in, forgot and reset: a form a thumb can use ────────────────── */
+/* The desktop sizes the form from the ring (68% of it), which on a phone,
+   or on any screen with the keyboard up, is a 177–225px form with the
+   placeholder cut off and "Send link" on two lines. The form keeps the
+   ring's size where that is larger and never drops under 320px (or the
+   screen). */
+.login-shell.web-login .login-stage {
+  max-width: max(calc(var(--ring-size) * 0.84), min(360px, 100%));
+}
+
+.login-shell.web-login .login-flip > * {
+  max-width: max(calc(var(--ring-size) * 0.68), min(320px, 100%));
+}
+
+/* The reset screen's "Back to sign in" is a .login-forgot <button> without
+   the flip's reset, so it drew as a grey native button with the link text
+   pushed right. Both text actions: link-styled, 40px tall. */
+.login-shell.web-login button.login-forgot {
+  appearance: none;
+  min-height: 40px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.login-shell.web-login button.login-forgot:not(.login-flip-back) {
+  text-align: center;
+}
+
+.login-shell.web-login button.login-forgot:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── key / value rows ─────────────────────────────────────────────────── */
+/* .kv-row spreads label and value with no gap, so a value that wraps runs
+   into its label ("Телефон+374 …", "ОписаниеNetwork …"). Dialogs render
+   outside .web-shell, hence :root[data-shell]. */
+:root[data-shell] .kv-row {
+  gap: 16px;
+}
+
+:root[data-shell] .kv-row .v {
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* ── branch prices ────────────────────────────────────────────────────── */
+/* The panel's inline widths are matched by attribute: if the panel changes
+   them these rules simply stop matching. */
+
+/* Selects fixed at 180px cut their own answer ("Фиксированная цен…").
+   They take the width of their longest choice, never wider than the card. */
+.web-shell .prices-page select.input[style*="width"] {
+  width: auto !important;
+  max-width: 100%;
+}
+
+/* Their field label is a flex item of a row, so by default it cannot be
+   narrower than the select inside it; this lets it (and the select's 100%)
+   stop at the card's edge. */
+.web-shell .prices-page .row > label.col {
+  min-width: 0;
+}
+
+@media (max-width: 899px) {
+  /* Rate grids are "100px 1fr 1fr" (150px for sub-platforms) and each input
+     reserves 56px for its currency suffix: on a phone about 16px was left
+     for the number, so 800 read "80" and 1500 read "15". The label column
+     now takes what the label needs (wrapping past 96px) and the suffix room
+     is what the suffix needs. */
+  .web-shell .prices-group--rates div[style*="grid-template-columns"] {
+    grid-template-columns: fit-content(96px) minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+
+  .web-shell .prices-group--rates input.input[style*="padding-right"] {
+    padding-right: 48px !important;
+  }
+
+  /* Sub-tabs share one row and cut the longer label ("Дополнительны…").
+     On a phone they wrap onto two lines instead. */
+  .web-shell .cp-subtab {
+    height: auto;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  /* Hub link cards (220px minimum each) wrapped into ragged rows; on a
+     phone they fill the row, on a tablet two share it evenly. */
+  .web-shell .row > a.card {
+    flex: 1 1 220px;
+  }
+}
+
+/* ── drawer on a short screen ─────────────────────────────────────────── */
+/* The sidebar pins support, profile and sign-out to the bottom and scrolls
+   only the menu between them. A phone held sideways (360–430px tall) left
+   that menu one item tall. There the whole drawer scrolls as one column. */
+@media (max-width: 899px) and (max-height: 540px) {
+  .web-shell .web-drawer .sidebar {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .web-shell .web-drawer .sidebar-nav {
+    flex: none;
+    overflow: visible;
   }
 }
