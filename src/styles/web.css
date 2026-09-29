@@ -116,11 +116,35 @@
     width: auto;
   }
 
+  /* The shell is a fixed frame over the whole screen, so the document itself
+     never scrolls — only .main does. Sized by 100dvh alone, a browser without
+     dvh (iOS Safari before 15.4, some WebViews) falls back to 100vh, which is
+     taller than what is visible: the document then scrolled that difference,
+     the sticky top bar stayed put and slid over the top of .main, and the
+     sticky Back button there was left half under it. */
+  .web-shell {
+    position: fixed;
+    inset: 0;
+    height: auto;
+  }
+
+  /* No top padding here: WebKit and Blink disagree on whether a sticky
+     child's `top` counts from a scroll container's padding, so the gap above
+     the content is the first child's margin instead, and the Back button's
+     offset is its own `top` — the same in every browser. */
   .web-shell .main {
     grid-column: 1;
     grid-row: 2;
     min-height: 0;
-    padding: 16px max(12px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    padding: 0 max(12px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+
+  .web-shell .main > :first-child {
+    margin-top: 16px;
+  }
+
+  .web-shell .main > .cp-back-btn {
+    top: 8px;
   }
 
   /* The drawer slides in from the right, the side of its button. */
@@ -641,8 +665,8 @@
  * order or behaviour changes.
  */
 @media (max-width: 599px) {
-  .web-shell .main {
-    padding-top: 12px;
+  .web-shell .main > :first-child {
+    margin-top: 12px;
   }
 
   .web-shell .screen-bg {
