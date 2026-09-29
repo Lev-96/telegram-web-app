@@ -41,6 +41,11 @@ export const WEB_TEXT = {
   "web.close": { en: "Close", ru: "Закрыть", am: "Փակել" },
 
   "web.telegram.title": { en: "Telegram", ru: "Telegram", am: "Telegram" },
+  "web.telegram.hint": {
+    en: "Work from the bot",
+    ru: "Работа через бота",
+    am: "Աշխատանք բոտով",
+  },
   "web.telegram.open": { en: "Telegram access", ru: "Доступ через Telegram", am: "Մուտք Telegram-ով" },
   "web.telegram.notGranted": {
     en: "Telegram access has not been given to this account. Ask your Cyber Place administrator.",
