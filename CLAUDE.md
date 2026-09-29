@@ -44,8 +44,8 @@ fetch-panel`) for how its screens work, and the backend's for the API.
   nothing about an administrator giving access.
 - Tokens from `/owner-web/session/login` and `/telegram/mini-app/session`
   carry a `client:*` ability, expire (30 days web / 8h Telegram), die when
-  idle (14 days web / 60 min Telegram), on an admin block, on unlinking
-  Telegram and on a password reset. Switching accounts on the web is a new web sign-in: the
+  idle (14 days web / 60 min Telegram), on an admin block, when the
+  Telegram link moves to another Telegram account and on a password reset. Switching accounts on the web is a new web sign-in: the
   server deletes the web token the browser held. They may not call the routes
   in `denied_routes` (logout-all, admin, password/email
   change, creating or writing managers/users, deleting a company, unlock PIN,
@@ -53,9 +53,8 @@ fetch-panel`) for how its screens work, and the backend's for the API.
   render from the panel's code; the server refuses the write with a sentence.
 - Telegram: the app sends Telegram's signed launch data untouched; the
   backend checks the HMAC with the bot token, freshness (5 min) and one-time
-  use. Linking: the owner creates a one-time link on the web → opens it in
-  Telegram → the web shows the Telegram @name → the owner confirms with the
-  password. Until confirmed a link grants nothing.
+  use. Linking is the one-tap handoff below: no code on screen, no password
+  confirmation (the owner's decision, 2026-09-29).
 - PS5 wake/rest/pairing and the kiosk agent's LAN control stay desktop-only
   (the venue network is unreachable from a browser); the server refuses them
   to web tokens and the screens show the server's sentence.
@@ -127,13 +126,25 @@ button sticks at `top: 8px`. Reproduced and verified in Chromium by forcing
 the shell 80px taller than the screen: before, 0 of 40px of the button
 visible; after, 40 of 40, document scroll 0, bottom of `.main` reachable.
 
-## Opening the Mini App without START (2026-09-29)
+## One-tap Telegram (2026-09-29)
 
-The access dialog shows "Open in Telegram" for a usable link: the backend's
-`telegram.open_url` (`t.me/<bot>/<app>` or `t.me/<bot>?startapp`) opens the
-Mini App directly, in a new tab, with no chat START; the client never builds
-it. Inside Telegram a linked owner also has a launcher button in the bot's
-chat (set by the backend, `TelegramOwnerBot`). Bot setup per environment:
-backend `php artisan telegram:owner-bot setup`, plus BotFather's Main Mini
-App URL = this app's address.
+The owner's "Telegram" menu card (`src/web/TelegramMenuEntry.tsx`) is a real
+link to `POST /client-access/telegram/open`'s one-time handoff
+(`t.me/<bot>[/<app>]?startapp=link_<code>`, 2 minutes). Telegram opens the
+Mini App straight away (no chat, no START), `TelegramGate` sends the signed
+launch to `/telegram/mini-app/link`, and the backend links that Telegram
+account to the owner and returns the session: the owner lands in the panel
+signed in. There is no access dialog, QR, code or password confirmation any
+more.
+
+`src/web/telegramHandoff.ts` prepares the link while the card is seen
+(IntersectionObserver + page visibility: drawer open, or the sidebar on a wide
+screen) and renews it 30 s before it expires, because a phone opens the
+Telegram app from a link only when the tap follows a real link — a link
+fetched after the tap shows the t.me page instead. A tap before it is ready
+opens a tab inside the tap and sends it there when the link arrives. Later
+launches from the bot's chat launcher use `/telegram/mini-app/session`.
+
+Bot setup per environment: backend `php artisan telegram:owner-bot setup`,
+plus BotFather's Main Mini App URL = this app's address.
 
