@@ -14,7 +14,7 @@ vi.mock("@/api/client", () => ({
 vi.mock("@/i18n/LanguageContext", () => ({ useLang: () => ({ lang: "en" }) }));
 
 import { AppConfig } from "@/infrastructure/AppConfig";
-import TelegramGate from "@web/telegram/TelegramGate";
+import TelegramGate, { forgetExchanges } from "@web/telegram/TelegramGate";
 import { readTelegramLaunch } from "@web/telegram/telegram";
 
 const webApp = (initData: string, startParam?: string) => ({
@@ -26,6 +26,7 @@ const webApp = (initData: string, startParam?: string) => ({
 });
 
 beforeEach(() => {
+  forgetExchanges();
   requests.calls = [];
   requests.next = null;
   window.sessionStorage.clear();
@@ -88,6 +89,28 @@ describe("the Telegram gate", () => {
     );
     await screen.findByText("panel");
     expect(requests.calls).toEqual([]);
+  });
+
+  it("mounted again after the language picker, it does not trade the same launch twice", async () => {
+    requests.next = { login: { id: 1, name: "O", email: "o@x", role: "company_owner" }, token: "2|handoff" };
+    const same = launch("link_CODE");
+    const first = render(
+      <TelegramGate launch={same}>
+        <p>panel</p>
+      </TelegramGate>,
+    );
+    await first.findByText("panel");
+    first.unmount();
+
+    // The server refuses a second use of the same launch.
+    requests.next = Object.assign(new Error("Telegram did not confirm who you are."), { status: 401 });
+    render(
+      <TelegramGate launch={same}>
+        <p>panel</p>
+      </TelegramGate>,
+    );
+    await screen.findByText("panel");
+    expect(requests.calls.map((c) => c.path)).toEqual(["/telegram/mini-app/link"]);
   });
 
   it("a handoff launch from the web signs in at once and shows the panel", async () => {

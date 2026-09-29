@@ -4,7 +4,7 @@ import Spinner from "@/components/ui/Spinner";
 import { AppConfig } from "@/infrastructure/AppConfig";
 import { keyValueStore } from "@/infrastructure/KeyValueStore";
 import { useWebText } from "@web/web/i18n";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { errorMessage, TelegramLaunch } from "./telegram";
 
 type State = { kind: "working" } | { kind: "ready" } | { kind: "refused"; message: string | null };
@@ -24,36 +24,61 @@ interface LoginResponse {
  *
  * Either way the panel itself follows, signed in, exactly as in a browser.
  *
- * A launch is accepted by the server ONCE, so the exchange runs once per page
- * load even under React's double-invoked effects. A reload inside Telegram
- * keeps the session it already has (sessionStorage) instead of asking again.
+ * A launch is accepted by the server ONCE, so the exchange runs once per
+ * launch ({@link exchangeLaunch}), however many times this gate is mounted. A
+ * reload inside Telegram keeps the session it already has (sessionStorage)
+ * instead of asking again.
  */
+/**
+ * The launch traded for a session — once per launch, not once per component.
+ *
+ * Telegram's launch data is accepted by the server ONCE (replay protection),
+ * and this gate can be mounted twice for one launch: the first-run language
+ * picker renders the app behind it, and choosing a language re-renders the
+ * same children in a different place, which React mounts afresh. A second
+ * exchange of the same launch was refused ("Telegram did not confirm who you
+ * are") right after the owner picked a language (2026-09-30). Kept per
+ * launch here, the second mount gets the first one's result.
+ */
+const exchanges = new Map<string, Promise<void>>();
+
+export const exchangeLaunch = (launch: TelegramLaunch): Promise<void> => {
+  const known = exchanges.get(launch.initData);
+  if (known) return known;
+
+  const run = async () => {
+    // A handoff always signs in (it may be a different owner than before);
+    // a plain launch keeps the session this Mini App already holds.
+    if (!launch.linkParam && (await keyValueStore.get<string>(AppConfig.storageKeys.token))) return;
+
+    const res = await request<LoginResponse>(launch.linkParam ? "/telegram/mini-app/link" : "/telegram/mini-app/session", {
+      method: "POST",
+      body: { init_data: launch.initData },
+    });
+    await keyValueStore.set(AppConfig.storageKeys.token, res.token);
+  };
+
+  const exchange = run();
+  exchanges.set(launch.initData, exchange);
+  return exchange;
+};
+
+/** Tests only: each test is a new launch. */
+export const forgetExchanges = () => exchanges.clear();
+
 const TelegramGate = ({ launch, children }: { launch: TelegramLaunch; children: ReactNode }) => {
   const tw = useWebText();
   const [state, setState] = useState<State>({ kind: "working" });
-  const started = useRef(false);
 
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-
-    const run = async () => {
-      // A handoff always signs in (it may be a different owner than before);
-      // a plain launch keeps the session this Mini App already holds.
-      if (!launch.linkParam && (await keyValueStore.get<string>(AppConfig.storageKeys.token))) {
-        setState({ kind: "ready" });
-        return;
-      }
-
-      const res = await request<LoginResponse>(launch.linkParam ? "/telegram/mini-app/link" : "/telegram/mini-app/session", {
-        method: "POST",
-        body: { init_data: launch.initData },
-      });
-      await keyValueStore.set(AppConfig.storageKeys.token, res.token);
-      setState({ kind: "ready" });
+    let current = true;
+    exchangeLaunch(launch).then(
+      () => current && setState({ kind: "ready" }),
+      (error: unknown) => current && setState({ kind: "refused", message: errorMessage(error) }),
+    );
+    return () => {
+      current = false;
     };
-
-    run().catch((error: unknown) => setState({ kind: "refused", message: errorMessage(error) }));
   }, [launch]);
 
   if (state.kind === "ready") return <>{children}</>;
