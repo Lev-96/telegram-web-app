@@ -285,6 +285,14 @@
   flex-wrap: wrap;
 }
 
+/* "Open in Telegram": a link drawn as the panel's primary button. */
+.web-telegram__open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 /* ── sign-in: the desktop's own login-* screen, plus the web's notes ───── */
 .web-login__card {
   display: flex;

@@ -83,10 +83,11 @@ export const WEB_TEXT = {
   "web.telegram.confirm": { en: "Confirm", ru: "Подтвердить", am: "Հաստատել" },
   "web.telegram.reject": { en: "Not mine", ru: "Это не мой", am: "Իմը չէ" },
   "web.telegram.active": {
-    en: "Telegram {0} is linked. Open the bot to work from Telegram.",
-    ru: "Telegram {0} привязан. Откройте бота, чтобы работать из Telegram.",
-    am: "Telegram {0}-ը կապված է։ Բացեք բոտը՝ Telegram-ից աշխատելու համար։",
+    en: "Telegram {0} is linked. Open the app here, or with the button in the bot's chat.",
+    ru: "Telegram {0} привязан. Откройте приложение здесь или кнопкой в чате бота.",
+    am: "Telegram {0}-ը կապված է։ Բացեք հավելվածն այստեղից կամ բոտի չաթի կոճակով։",
   },
+  "web.telegram.openApp": { en: "Open in Telegram", ru: "Открыть в Telegram", am: "Բացել Telegram-ում" },
   "web.telegram.unlink": { en: "Unlink Telegram", ru: "Отвязать Telegram", am: "Անջատել Telegram-ը" },
   "web.telegram.unlinkConfirm": {
     en: "Unlink this Telegram account? It will be signed out at once.",

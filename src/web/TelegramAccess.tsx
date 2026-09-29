@@ -16,6 +16,8 @@ export interface ClientAccessState {
     username: string | null;
     telegram_user_id: number | null;
     enabled: boolean;
+    /** Opens the Mini App directly (no chat, no START); only for a usable link. */
+    open_url?: string | null;
   };
 }
 
@@ -158,6 +160,11 @@ const TelegramAccess = ({ open, onClose }: { open: boolean; onClose: () => void 
         {state && state.telegram.status === "active" && (
           <>
             <p>{tw("web.telegram.active", who)}</p>
+            {state.telegram.open_url && (
+              <a className="btn web-telegram__open" href={state.telegram.open_url} target="_blank" rel="noopener noreferrer">
+                {tw("web.telegram.openApp")}
+              </a>
+            )}
             <Button variant="secondary" className="is-danger" onClick={() => void unlink(tw("web.telegram.unlinkConfirm"))} disabled={busy}>
               {tw("web.telegram.unlink")}
             </Button>
