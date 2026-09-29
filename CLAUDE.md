@@ -114,3 +114,15 @@ Measured with real two-finger touch in Chromium: a control page pinches to 5x,
 the app stays 1x; the branch map still pinch-zooms (Leaflet, 12 -> 15);
 touch scrolling works. iOS layers are unit-tested only, not on a device.
 
+## Narrow shell is a fixed frame (2026-09-29)
+
+Below 900px `.web-shell` is `position: fixed; inset: 0`: only `.main` scrolls.
+With `height: 100dvh` alone, a browser without dvh (iOS Safari < 15.4, some
+WebViews) used 100vh, taller than the visible area; the document scrolled,
+the sticky top bar slid over `.main` and the sticky Back button was left half
+under it. `.main` has no top padding (WebKit and Blink disagree on sticky vs
+scroll-container padding): the gap is the first child's margin and the Back
+button sticks at `top: 8px`. Reproduced and verified in Chromium by forcing
+the shell 80px taller than the screen: before, 0 of 40px of the button
+visible; after, 40 of 40, document scroll 0, bottom of `.main` reachable.
+
