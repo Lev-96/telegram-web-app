@@ -7,6 +7,7 @@ import "@/styles/global.css";
 import "@web/styles/web.css";
 import TelegramGate from "@web/telegram/TelegramGate";
 import { prepareTelegramChrome, readTelegramLaunch } from "@web/telegram/telegram";
+import ResetPassword, { isResetLink } from "@web/overrides/ResetPassword";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -24,11 +25,16 @@ if (launch) {
 
 // The panel's own tree — the same providers and the same App the desktop
 // renders — with the Telegram gate in front of it when opened from Telegram.
-const panel = (
-  <AuthProvider>
-    <App />
-  </AuthProvider>
-);
+// Opened on a password-reset link, the reset screen stands alone instead:
+// signed in or not, the link must reach it (see ResetPassword).
+const panel =
+  !launch && isResetLink() ? (
+    <ResetPassword />
+  ) : (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
 
 createRoot(root).render(
   <StrictMode>

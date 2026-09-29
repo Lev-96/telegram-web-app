@@ -26,10 +26,16 @@ export const WEB_TEXT = {
     ru: "Доступ выдаёт администратор Cyber Place. Сам адрес ничего не открывает.",
     am: "Մուտքը տրամադրում է Cyber Place-ի ադմինիստրատորը։ Միայն հասցեն ոչինչ չի բացում։",
   },
-  "web.signIn.forgot": {
-    en: "Forgot the password? Reset it in the desktop app or ask your administrator.",
-    ru: "Забыли пароль? Восстановите его в приложении для компьютера или обратитесь к администратору.",
-    am: "Մոռացե՞լ եք գաղտնաբառը։ Վերականգնեք այն համակարգչի հավելվածում կամ դիմեք ադմինիստրատորին։",
+  "web.reset.noLink": {
+    en: "This reset link cannot be used. Ask for a new one.",
+    ru: "Эта ссылка для сброса не работает. Запросите новую.",
+    am: "Վերակայման այս հղումը չի գործում։ Պահանջեք նորը։",
+  },
+  "web.reset.newLink": { en: "Send a new link", ru: "Отправить новую ссылку", am: "Ուղարկել նոր հղում" },
+  "web.reset.everywhere": {
+    en: "After the change you will be signed out on every device, the desktop app included.",
+    ru: "После смены пароля вы выйдете из аккаунта на всех устройствах, включая приложение для компьютера.",
+    am: "Փոփոխությունից հետո դուք դուրս կգաք բոլոր սարքերից, ներառյալ համակարգչի հավելվածը։",
   },
   "web.menu": { en: "Menu", ru: "Меню", am: "Մենյու" },
   "web.close": { en: "Close", ru: "Закрыть", am: "Փակել" },

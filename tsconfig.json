@@ -20,6 +20,7 @@
       "@/infrastructure/KeyValueStore": ["src/overrides/KeyValueStore.ts"],
       "@/components/Layout": ["src/overrides/Layout.tsx"],
       "@/routes/Login": ["src/overrides/Login.tsx"],
+      "@/routes/ResetPassword": ["src/overrides/ResetPassword.tsx"],
       "@/telemetry/TelemetryTracker": ["src/overrides/TelemetryTracker.tsx"],
       "@web/*": ["src/*"],
       "@/*": ["vendor/panel/src/*"]

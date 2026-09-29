@@ -1,11 +1,15 @@
 /**
  * The panel's `@/infrastructure/KeyValueStore` for a browser.
  *
- * The session — the token and the signed-in user — lives in sessionStorage:
- * it ends with the tab and is never written where another tab, or a shared
- * computer's next user, finds it tomorrow. Everything else (language,
- * currency, remembered emails) stays in localStorage, as it does in the
- * panel's own browser fallback.
+ * On the web everything lives in localStorage, as in the panel's own browser
+ * fallback, so a sign-in survives closing the browser the way the desktop's
+ * does (2026-09-29). What keeps that safe is on the server, not here: the web
+ * token expires (30 days), dies after 14 idle days, is deleted by sign-out,
+ * by an account switch, by a password reset and by an administrator's revoke.
+ *
+ * Inside Telegram the session — the token and the signed-in user — stays in
+ * sessionStorage: opening the Mini App signs in again from Telegram's own
+ * launch data, so there is nothing to remember between launches.
  *
  * Both are wrapped: a WebView with storage disabled must not crash the app.
  */
@@ -39,9 +43,11 @@ declare global {
 
 const SESSION_KEYS: ReadonlySet<string> = new Set([AppConfig.storageKeys.token, AppConfig.storageKeys.user]);
 
+const inTelegram = () => document.documentElement.dataset.shell === "telegram";
+
 const area = (key: string): Storage | null => {
   try {
-    return SESSION_KEYS.has(key) ? window.sessionStorage : window.localStorage;
+    return inTelegram() && SESSION_KEYS.has(key) ? window.sessionStorage : window.localStorage;
   } catch {
     return null;
   }

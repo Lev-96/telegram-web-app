@@ -4,10 +4,12 @@
  * Built from the desktop's own sign-in pieces — the WebGL space scene, the HUD
  * ring around the wordmark, the email field that remembers addresses, the
  * password field, the language pills and every `login-*` style — so the web
- * greets an owner exactly as the desktop does. Two things differ:
+ * greets an owner exactly as the desktop does — including the card that turns
+ * over to "forgot password" (the panel's own ForgotPasswordForm; the link it
+ * mails opens this web app's reset screen, 2026-09-29). Two things differ:
  *
- *   - no "forgot password" face: the reset link it mails is the desktop's;
- *     the card says where to reset instead;
+ *   - a language picked here is handed to the account that signs in next, so
+ *     it is not asked the same question again seconds later;
  *   - inside Telegram there is no password at all: a Telegram session that
  *     ended is renewed by opening the Mini App again, so that is what shows.
  *
@@ -19,15 +21,18 @@ import { blockingKeyOf } from "@/api/blockingErrors";
 import type { ApiError } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { recentEmails } from "@/auth/recentEmails";
+import ForgotPasswordForm from "@/components/login/ForgotPasswordForm";
 import HudBackdrop from "@/components/login/HudBackdrop";
 import Button from "@/components/ui/Button";
 import PasswordInput from "@/components/ui/PasswordInput";
 import SuggestInput from "@/components/ui/SuggestInput";
 import { useLang } from "@/i18n/LanguageContext";
-import { LANGUAGES } from "@/i18n/translations";
+import { notePreLoginChoice } from "@/i18n/languagePreference";
+import { Lang, LANGUAGES } from "@/i18n/translations";
 import { errorCode } from "@web/telegram/telegram";
 import { useWebText } from "@web/web/i18n";
 import { Component, FormEvent, lazy, ReactNode, Suspense, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 // Same split as the desktop: three.js arrives after the form.
 const LoginScene = lazy(() => import("@/components/login/LoginScene"));
@@ -50,10 +55,19 @@ class SceneGuard extends Component<{ children: ReactNode }, { failed: boolean }>
   }
 }
 
+/** Which face of the card is showing. */
+type Face = "login" | "forgot";
+
 const Login = () => {
   const { login } = useAuth();
   const { t, lang, setLang } = useLang();
   const tw = useWebText();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // The URL decides the face, as on the desktop: #/forgot-password opens the
+  // card already turned.
+  const face: Face = pathname === "/forgot-password" ? "forgot" : "login";
+  const flipTo = (next: Face) => navigate(next === "forgot" ? "/forgot-password" : "/login", { replace: true });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +79,11 @@ const Login = () => {
   useEffect(() => {
     if (!telegram) void recentEmails.list().then(setKnown);
   }, [telegram]);
+
+  const pickLang = (code: Lang) => {
+    notePreLoginChoice(code);
+    setLang(code);
+  };
 
   const forgetEmail = (value: string) => {
     void recentEmails.forget(value).then(() => recentEmails.list().then(setKnown));
@@ -108,7 +127,7 @@ const Login = () => {
             key={l.code}
             type="button"
             className={`login-lang-pill${lang === l.code ? " active" : ""}`}
-            onClick={() => setLang(l.code)}
+            onClick={() => pickLang(l.code)}
             aria-label={l.name}
             aria-pressed={lang === l.code}
           >
@@ -123,7 +142,9 @@ const Login = () => {
           <h1 className="login-brand">Cyber Place</h1>
         </div>
         <img className="login-logo" src="./logo.png" alt="" />
-        <h2 className="login-title">{telegram ? tw("web.telegram.title") : tw("web.signIn.title")}</h2>
+        <h2 className="login-title">
+          {telegram ? tw("web.telegram.title") : face === "forgot" ? t("auth.forgotTitle") : tw("web.signIn.title")}
+        </h2>
 
         {telegram ? (
           <div className="login-card web-login__card">
@@ -133,40 +154,56 @@ const Login = () => {
             </Button>
           </div>
         ) : (
-          <form className="login-card web-login__card" onSubmit={submit} noValidate>
-            <SuggestInput
-              label={t("auth.email")}
-              type="email"
-              inputMode="email"
-              autoComplete="username"
-              placeholder="your@email.com"
-              value={email}
-              onValueChange={setEmail}
-              options={known}
-              onRemoveOption={forgetEmail}
-              removeHint={t("login.forgetEmail")}
-              required
-              autoFocus
-            />
-            <PasswordInput
-              label={t("auth.password")}
-              placeholder={t("login.passwordPlaceholder")}
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            {error && (
-              <div className="error web-login__error" role="alert">
-                {error}
+          <div className="login-flip-wrap">
+            <div className={`login-flip${face === "forgot" ? " is-back" : ""}`}>
+              <form
+                className="login-card web-login__card"
+                onSubmit={submit}
+                noValidate
+                inert={face === "forgot" || undefined}
+              >
+                <SuggestInput
+                  label={t("auth.email")}
+                  type="email"
+                  inputMode="email"
+                  autoComplete="username"
+                  placeholder="your@email.com"
+                  value={email}
+                  onValueChange={setEmail}
+                  options={known}
+                  onRemoveOption={forgetEmail}
+                  removeHint={t("login.forgetEmail")}
+                  required
+                  autoFocus={face === "login"}
+                />
+                <PasswordInput
+                  label={t("auth.password")}
+                  placeholder={t("login.passwordPlaceholder")}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                {error && (
+                  <div className="error web-login__error" role="alert">
+                    {error}
+                  </div>
+                )}
+                <button type="button" className="login-forgot login-flip-back" onClick={() => flipTo("forgot")}>
+                  {t("auth.forgot")}
+                </button>
+                <Button disabled={busy || email.trim() === "" || password === ""}>
+                  {busy ? t("login.signingIn") : t("login.title")}
+                </Button>
+                <p className="web-login__note">{tw("web.signIn.accessNote")}</p>
+              </form>
+
+              {/* The reverse face; `inert` keeps the hidden side out of the tab order. */}
+              <div className="login-flip-face-back" inert={face === "login" || undefined}>
+                <ForgotPasswordForm onBack={() => flipTo("login")} autoFocus={face === "forgot"} />
               </div>
-            )}
-            <Button disabled={busy || email.trim() === "" || password === ""}>
-              {busy ? t("login.signingIn") : t("login.title")}
-            </Button>
-            <p className="web-login__note">{tw("web.signIn.accessNote")}</p>
-            <p className="web-login__note">{tw("web.signIn.forgot")}</p>
-          </form>
+            </div>
+          </div>
         )}
       </div>
     </div>

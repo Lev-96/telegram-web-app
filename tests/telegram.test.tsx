@@ -29,6 +29,8 @@ beforeEach(() => {
   requests.calls = [];
   requests.next = null;
   window.sessionStorage.clear();
+  window.localStorage.clear();
+  document.documentElement.dataset.shell = "telegram";
   delete window.Telegram;
 });
 afterEach(cleanup);
