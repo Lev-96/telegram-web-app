@@ -1,13 +1,22 @@
 /**
- * "Telegram" in the side menu (2026-09-29), in place of the top bar's corner
- * button: one card under Support, drawn with Support's own card styles, that
- * opens the owner's Telegram access dialog. Handed to the panel's Sidebar
- * through its `footerExtra` slot, so the menu stays the panel's.
+ * "Telegram" in the side menu (2026-09-29): one tap opens the Mini App in
+ * Telegram, already signed in as this owner — no dialog, no code, no START.
+ *
+ * It is a real link to the prepared one-time handoff (see telegramHandoff.ts),
+ * fetched while the entry can actually be seen (the drawer is open, or the
+ * sidebar is on screen) and the page is in front; a hidden entry asks the
+ * server for nothing. Drawn with Support's own card styles and handed to the
+ * panel's Sidebar through its `footerExtra` slot, so the menu stays the
+ * panel's.
  */
+import { notify } from "@/ui/notify";
 import { useWebText } from "@web/web/i18n";
+import { MouseEvent, RefObject, useEffect, useRef, useState } from "react";
+import { useTelegramHandoff } from "./telegramHandoff";
 
 interface Props {
-  onOpen: () => void;
+  /** Called on the tap, e.g. to close the drawer. */
+  onNavigate?: () => void;
 }
 
 /** Telegram's paper plane, drawn in the current text colour. */
@@ -23,11 +32,52 @@ const PlaneIcon = () => (
   </svg>
 );
 
-const TelegramMenuEntry = ({ onOpen }: Props) => {
+/** On screen and in a tab the person is looking at. Without IntersectionObserver: assumed seen. */
+export const useSeen = (ref: RefObject<Element | null>): boolean => {
+  const [onScreen, setOnScreen] = useState(typeof IntersectionObserver === "undefined");
+  const [pageShown, setPageShown] = useState(() => document.visibilityState !== "hidden");
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => setOnScreen(entry.isIntersecting));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  useEffect(() => {
+    const onChange = () => setPageShown(document.visibilityState !== "hidden");
+    document.addEventListener("visibilitychange", onChange);
+    return () => document.removeEventListener("visibilitychange", onChange);
+  }, []);
+
+  return onScreen && pageShown;
+};
+
+const TelegramMenuEntry = ({ onNavigate }: Props) => {
   const tw = useWebText();
+  const ref = useRef<HTMLAnchorElement>(null);
+  const { url, open } = useTelegramHandoff(useSeen(ref));
+
+  const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!url) {
+      // Tapped before the link was ready: get it now, in a tab opened by the tap.
+      event.preventDefault();
+      open().catch(() => notify.message("error", tw("web.telegram.failed")));
+    }
+    onNavigate?.();
+  };
 
   return (
-    <button type="button" className="nav-support-card web-telegram-entry" onClick={onOpen}>
+    <a
+      ref={ref}
+      className="nav-support-card web-telegram-entry"
+      href={url ?? "#"}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={onClick}
+      aria-busy={url ? undefined : true}
+    >
       <span className="nav-support-card__icon">
         <PlaneIcon />
       </span>
@@ -35,7 +85,7 @@ const TelegramMenuEntry = ({ onOpen }: Props) => {
         <span className="nav-support-card__title">{tw("web.telegram.title")}</span>
         <span className="nav-support-card__hint">{tw("web.telegram.hint")}</span>
       </span>
-    </button>
+    </a>
   );
 };
 

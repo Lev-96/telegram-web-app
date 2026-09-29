@@ -10,8 +10,9 @@
  * top bar (logo on the left, menu button on the right; the drawer opens from
  * the right, under the thumb), so the same screens fit a phone and
  * Telegram's narrow view. In a browser an owner's menu also carries a
- * "Telegram" card (Sidebar's footer slot) that opens their Telegram access;
- * a manager never has Telegram, and inside Telegram it would be circular.
+ * "Telegram" card (Sidebar's footer slot): one tap opens the Mini App in
+ * Telegram, signed in. A manager never has Telegram, and inside Telegram it
+ * would be circular.
  */
 import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderNotifier";
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
@@ -22,7 +23,6 @@ import Sidebar from "@/components/Sidebar";
 import BackButton from "@/components/ui/BackButton";
 import { useAuth } from "@/auth/AuthContext";
 import { Ps5ControlProvider } from "@/ps5/Ps5ControlProvider";
-import TelegramAccess from "@web/web/TelegramAccess";
 import TelegramMenuEntry from "@web/web/TelegramMenuEntry";
 import { useWebText } from "@web/web/i18n";
 import { useEffect, useState } from "react";
@@ -35,7 +35,6 @@ const Layout = () => {
   const { user } = useAuth();
   const location = useLocation();
   const [drawer, setDrawer] = useState(false);
-  const [telegram, setTelegram] = useState(false);
 
   // A menu item was chosen: the drawer has done its job.
   useEffect(() => setDrawer(false), [location.pathname]);
@@ -49,11 +48,6 @@ const Layout = () => {
 
   // Telegram access is an owner's (the server grants it to no other role).
   const offersTelegram = !inTelegram() && user?.role === "company_owner";
-
-  const openTelegram = () => {
-    setDrawer(false);
-    setTelegram(true);
-  };
 
   return (
     <Ps5ControlProvider>
@@ -74,7 +68,7 @@ const Layout = () => {
         </header>
         <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />
         <div className="web-drawer">
-          <Sidebar footerExtra={offersTelegram ? <TelegramMenuEntry onOpen={openTelegram} /> : undefined} />
+          <Sidebar footerExtra={offersTelegram ? <TelegramMenuEntry onNavigate={() => setDrawer(false)} /> : undefined} />
         </div>
         <main className="main">
           <BackButton />
@@ -93,7 +87,6 @@ const Layout = () => {
         </div>
         <UnexpectedWakeDialog />
       </div>
-      {offersTelegram && <TelegramAccess open={telegram} onClose={() => setTelegram(false)} />}
     </Ps5ControlProvider>
   );
 };

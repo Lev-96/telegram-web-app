@@ -90,17 +90,29 @@ describe("the Telegram gate", () => {
     expect(requests.calls).toEqual([]);
   });
 
-  it("a link launch redeems the code and asks for confirmation on the web — no session", async () => {
-    requests.next = { status: "pending", message: "confirm" };
+  it("a handoff launch from the web signs in at once and shows the panel", async () => {
+    requests.next = { login: { id: 1, name: "O", email: "o@x", role: "company_owner" }, token: "2|handoff" };
     render(
       <TelegramGate launch={launch("link_CODE")}>
         <p>panel</p>
       </TelegramGate>,
     );
-    await screen.findByText(/confirm this Telegram account/i);
+    await screen.findByText("panel");
     expect(requests.calls).toEqual([{ path: "/telegram/mini-app/link", body: { init_data: "signed" } }]);
-    expect(screen.queryByText("panel")).toBeNull();
-    expect(window.sessionStorage.getItem(AppConfig.storageKeys.token)).toBeNull();
+    expect(window.sessionStorage.getItem(AppConfig.storageKeys.token)).toBe('"2|handoff"');
+  });
+
+  it("a handoff replaces the session this Mini App already held", async () => {
+    window.sessionStorage.setItem(AppConfig.storageKeys.token, '"1|old"');
+    requests.next = { login: { id: 2, name: "B", email: "b@x", role: "company_owner" }, token: "3|new" };
+    render(
+      <TelegramGate launch={launch("link_CODE")}>
+        <p>panel</p>
+      </TelegramGate>,
+    );
+    await screen.findByText("panel");
+    expect(requests.calls.map((c) => c.path)).toEqual(["/telegram/mini-app/link"]);
+    expect(window.sessionStorage.getItem(AppConfig.storageKeys.token)).toBe('"3|new"');
   });
 
   it("shows the server's refusal and never the panel", async () => {

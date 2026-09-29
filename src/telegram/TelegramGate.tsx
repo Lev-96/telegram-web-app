@@ -7,11 +7,7 @@ import { useWebText } from "@web/web/i18n";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { errorMessage, TelegramLaunch } from "./telegram";
 
-type State =
-  | { kind: "working" }
-  | { kind: "ready" }
-  | { kind: "linkPending" }
-  | { kind: "refused"; message: string | null };
+type State = { kind: "working" } | { kind: "ready" } | { kind: "refused"; message: string | null };
 
 interface LoginResponse {
   login: { id: number; name: string; email: string; role: string };
@@ -21,10 +17,12 @@ interface LoginResponse {
 /**
  * Stands in front of the panel when it was opened inside Telegram.
  *
- *   opened from a link   the signed launch carries the one-time code:
- *                        /telegram/mini-app/link → "confirm on the web"
- *   opened from the bot  /telegram/mini-app/session → a Telegram session,
- *                        then the panel itself, exactly as in a browser
+ *   opened from the web  the signed launch carries the one-time handoff code
+ *                        (the owner web's "Telegram"): /telegram/mini-app/link
+ *                        links this Telegram account and returns the session
+ *   opened from the bot  /telegram/mini-app/session → the session
+ *
+ * Either way the panel itself follows, signed in, exactly as in a browser.
  *
  * A launch is accepted by the server ONCE, so the exchange runs once per page
  * load even under React's double-invoked effects. A reload inside Telegram
@@ -40,18 +38,14 @@ const TelegramGate = ({ launch, children }: { launch: TelegramLaunch; children: 
     started.current = true;
 
     const run = async () => {
-      if (launch.linkParam) {
-        await request("/telegram/mini-app/link", { method: "POST", body: { init_data: launch.initData } });
-        setState({ kind: "linkPending" });
-        return;
-      }
-
-      if (await keyValueStore.get<string>(AppConfig.storageKeys.token)) {
+      // A handoff always signs in (it may be a different owner than before);
+      // a plain launch keeps the session this Mini App already holds.
+      if (!launch.linkParam && (await keyValueStore.get<string>(AppConfig.storageKeys.token))) {
         setState({ kind: "ready" });
         return;
       }
 
-      const res = await request<LoginResponse>("/telegram/mini-app/session", {
+      const res = await request<LoginResponse>(launch.linkParam ? "/telegram/mini-app/link" : "/telegram/mini-app/session", {
         method: "POST",
         body: { init_data: launch.initData },
       });
@@ -74,7 +68,6 @@ const TelegramGate = ({ launch, children }: { launch: TelegramLaunch; children: 
             <p className="muted">{launch.linkParam ? tw("web.tg.linking") : tw("web.tg.signingIn")}</p>
           </>
         )}
-        {state.kind === "linkPending" && <p>{tw("web.tg.linkPending")}</p>}
         {state.kind === "refused" && (
           <>
             <p>{state.message ?? tw("web.tg.reopen")}</p>

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -11,7 +11,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  */
 
 const auth = vi.hoisted(() => ({ role: "company_owner" }));
-const telegramAccess = vi.hoisted(() => ({ lastOpen: null as boolean | null }));
+const handoff = vi.hoisted(() => ({
+  calls: [] as string[],
+  reply: { url: "https://t.me/cp_owner_bot/panel?startapp=link_X", expires_at: new Date(Date.now() + 120_000).toISOString() } as unknown,
+}));
 
 vi.mock("@/auth/AuthContext", () => ({ useAuth: () => ({ user: { id: 1, role: auth.role } }) }));
 vi.mock("@/i18n/LanguageContext", async () => {
@@ -28,10 +31,10 @@ vi.mock("@/components/notifications/SupportNotifier", () => ({ default: () => nu
 vi.mock("@/components/ps5/UnexpectedWakeDialog", () => ({ default: () => null }));
 vi.mock("@/components/ui/BackButton", () => ({ default: () => null }));
 vi.mock("@/ps5/Ps5ControlProvider", () => ({ Ps5ControlProvider: ({ children }: { children: ReactNode }) => <>{children}</> }));
-vi.mock("@web/web/TelegramAccess", () => ({
-  default: ({ open }: { open: boolean }) => {
-    telegramAccess.lastOpen = open;
-    return open ? <div role="dialog">telegram-access</div> : null;
+vi.mock("@/api/client", () => ({
+  request: async (path: string) => {
+    handoff.calls.push(path);
+    return handoff.reply;
   },
 }));
 
@@ -47,7 +50,7 @@ const mount = () =>
 afterEach(() => {
   cleanup();
   document.documentElement.dataset.shell = "";
-  telegramAccess.lastOpen = null;
+  handoff.calls = [];
 });
 
 describe("web shell frame", () => {
@@ -58,7 +61,7 @@ describe("web shell frame", () => {
     expect([...bar.children].map((el) => el.className)).toEqual(["web-topbar__logo", "web-topbar__menu"]);
   });
 
-  it("gives an owner a Telegram card in the menu that opens the access dialog and closes the drawer", () => {
+  it("gives an owner a Telegram card that is a real link to a prepared handoff, and the tap closes the drawer", async () => {
     document.documentElement.dataset.shell = "web";
     auth.role = "company_owner";
     const { container } = mount();
@@ -66,11 +69,15 @@ describe("web shell frame", () => {
     fireEvent.click(container.querySelector(".web-topbar__menu")!);
     expect(container.querySelector(".web-shell")!.classList.contains("is-drawer-open")).toBe(true);
 
-    const entry = container.querySelector(".sidebar .web-telegram-entry") as HTMLElement;
+    const entry = container.querySelector(".sidebar .web-telegram-entry") as HTMLAnchorElement;
     expect(entry.textContent).toContain("Telegram");
-    fireEvent.click(entry);
+    await waitFor(() => expect(entry.getAttribute("href")).toBe("https://t.me/cp_owner_bot/panel?startapp=link_X"));
+    expect(handoff.calls).toEqual(["/client-access/telegram/open"]);
+    expect(entry.getAttribute("target")).toBe("_blank");
+    expect(entry.getAttribute("rel")).toContain("noopener");
 
-    expect(screen.getByRole("dialog").textContent).toBe("telegram-access");
+    const followed = fireEvent.click(entry);
+    expect(followed).toBe(true); // not prevented: the browser follows the link itself
     expect(container.querySelector(".web-shell")!.classList.contains("is-drawer-open")).toBe(false);
   });
 
@@ -79,7 +86,7 @@ describe("web shell frame", () => {
     auth.role = "manager";
     const { container } = mount();
     expect(container.querySelector(".web-telegram-entry")).toBeNull();
-    expect(telegramAccess.lastOpen).toBeNull();
+    expect(handoff.calls).toEqual([]);
   });
 
   it("offers no Telegram inside Telegram", () => {
@@ -87,6 +94,6 @@ describe("web shell frame", () => {
     auth.role = "company_owner";
     const { container } = mount();
     expect(container.querySelector(".web-telegram-entry")).toBeNull();
-    expect(telegramAccess.lastOpen).toBeNull();
+    expect(handoff.calls).toEqual([]);
   });
 });
