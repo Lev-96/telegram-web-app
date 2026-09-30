@@ -1,4 +1,5 @@
 import { request } from "@/api/client";
+import NetworkBlockedScreen, { useNetworkBlock } from "@/components/NetworkBlockedScreen";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
 import { AppConfig } from "@/infrastructure/AppConfig";
@@ -69,6 +70,9 @@ export const forgetExchanges = () => exchanges.clear();
 const TelegramGate = ({ launch, children }: { launch: TelegramLaunch; children: ReactNode }) => {
   const tw = useWebText();
   const [state, setState] = useState<State>({ kind: "working" });
+  // An administrator blocked this address or country (2026-10-01): the same
+  // one screen the panel shows, not a generic "refused".
+  const blocked = useNetworkBlock();
 
   useEffect(() => {
     let current = true;
@@ -81,6 +85,7 @@ const TelegramGate = ({ launch, children }: { launch: TelegramLaunch; children: 
     };
   }, [launch]);
 
+  if (blocked) return <NetworkBlockedScreen code={blocked} />;
   if (state.kind === "ready") return <>{children}</>;
 
   return (

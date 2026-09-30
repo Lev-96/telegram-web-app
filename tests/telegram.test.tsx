@@ -7,11 +7,22 @@ const requests = vi.hoisted(() => ({ calls: [] as Array<{ path: string; body: un
 vi.mock("@/api/client", () => ({
   request: async (path: string, opts: { body?: unknown } = {}) => {
     requests.calls.push({ path, body: opts.body });
-    if (requests.next instanceof Error) throw requests.next;
+    if (requests.next instanceof Error) {
+      // As the real client does: an address block is announced to the app.
+      const { networkBlock, networkBlockCodeOf } = await import("@/auth/networkBlock");
+      const e = requests.next as Error & { status?: number; body?: unknown };
+      const blocked = networkBlockCodeOf(e.status, e.body);
+      if (blocked) networkBlock.raise(blocked);
+      throw requests.next;
+    }
     return requests.next;
   },
+  apiCache: { clear: () => {} },
 }));
-vi.mock("@/i18n/LanguageContext", () => ({ useLang: () => ({ lang: "en" }) }));
+vi.mock("@/i18n/LanguageContext", async () => {
+  const { t } = await import("@/i18n/translations");
+  return { useLang: () => ({ lang: "en", t: (k: string) => t(k, "en") }) };
+});
 
 import { AppConfig } from "@/infrastructure/AppConfig";
 import TelegramGate, { forgetExchanges } from "@web/telegram/TelegramGate";
@@ -25,7 +36,8 @@ const webApp = (initData: string, startParam?: string) => ({
   close: vi.fn(),
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  (await import("@/auth/networkBlock")).networkBlock.resetForTests();
   forgetExchanges();
   requests.calls = [];
   requests.next = null;
@@ -146,6 +158,17 @@ describe("the Telegram gate", () => {
       </TelegramGate>,
     );
     await waitFor(() => expect(screen.getByText(/not linked to Cyber Place/)).toBeTruthy());
+    expect(screen.queryByText("panel")).toBeNull();
+  });
+
+  it("a blocked address gets the block screen, not a generic refusal (2026-10-01)", async () => {
+    requests.next = Object.assign(new Error("Your IP is blocked."), { status: 403, body: { code: "ip_blocked" } });
+    render(
+      <TelegramGate launch={launch()}>
+        <p>panel</p>
+      </TelegramGate>,
+    );
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("from your IP address has been closed"));
     expect(screen.queryByText("panel")).toBeNull();
   });
 });
