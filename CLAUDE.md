@@ -173,3 +173,6 @@ reopen, reopen with wiped storage, the web on two new devices: no picker.
 This relies on the panel's `LanguageContext` importing `@/i18n/languagePreference`
 by alias (changed 2026-09-30); a relative import cannot be overridden here.
 
+## Address block (2026-10-01)
+
+When the backend answers `ip_blocked` / `country_blocked`, the panel's `NetworkBlockedScreen` replaces everything; `TelegramGate` shows the same screen instead of a generic "refused" (tested in `tests/telegram.test.tsx`). Web and Telegram owners have desktop parity (backend `client_access.denied_routes`), so no feature is hidden here either.
