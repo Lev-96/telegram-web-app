@@ -32,6 +32,25 @@ export const WEB_TEXT = {
     ru: "После смены пароля вы выйдете из аккаунта на всех устройствах, включая приложение для компьютера.",
     am: "Փոփոխությունից հետո դուք դուրս կգաք բոլոր սարքերից, ներառյալ համակարգչի հավելվածը։",
   },
+  // A new owner's or manager's first password: the same screen, opened from
+  // the invitation email (`&purpose=invite`).
+  "web.invite.title": { en: "Set your password", ru: "Задайте пароль", am: "Սահմանեք գաղտնաբառը" },
+  "web.invite.welcome": {
+    en: "Welcome to Cyber Place. Choose the password you will sign in with.",
+    ru: "Добро пожаловать в Cyber Place. Придумайте пароль для входа.",
+    am: "Բարի գալուստ Cyber Place։ Ընտրեք գաղտնաբառ, որով մուտք կգործեք։",
+  },
+  "web.invite.submit": { en: "Set password", ru: "Сохранить пароль", am: "Պահպանել գաղտնաբառը" },
+  "web.invite.done": {
+    en: "Your password is set. Sign in with your email and the new password.",
+    ru: "Пароль задан. Войдите со своим email и новым паролем.",
+    am: "Գաղտնաբառը սահմանված է։ Մուտք գործեք ձեր էլ. հասցեով և նոր գաղտնաբառով։",
+  },
+  "web.invite.noLink": {
+    en: "This invitation link cannot be used. Ask for a new one.",
+    ru: "Эта ссылка-приглашение не работает. Запросите новую.",
+    am: "Հրավերի այս հղումը չի գործում։ Պահանջեք նորը։",
+  },
   "web.menu": { en: "Menu", ru: "Меню", am: "Մենյու" },
   "web.close": { en: "Close", ru: "Закрыть", am: "Փակել" },
 

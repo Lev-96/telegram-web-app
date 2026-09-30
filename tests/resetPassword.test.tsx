@@ -76,6 +76,36 @@ describe("the web reset screen", () => {
     expect(screen.getByText("Отправить новую ссылку")).toBeTruthy();
   });
 
+  it("an invitation link: set-your-password wording, the purpose dropped from the address bar", async () => {
+    window.history.replaceState(null, "", `/#/reset-password?token=${SECRET}&purpose=invite`);
+    api.reset.mockResolvedValueOnce(undefined);
+    const { container } = render(<ResetPassword />);
+
+    expect(window.location.hash).toBe("#/reset-password");
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Задайте пароль");
+    expect(screen.getByText("Добро пожаловать в Cyber Place. Придумайте пароль для входа.")).toBeTruthy();
+    // Nothing to sign out of yet: the reset's warning is not shown.
+    expect(container.textContent).not.toContain("выйдете из аккаунта");
+
+    fill(container, "brand-new-pass");
+    expect((await screen.findByRole("status")).textContent).toContain("Пароль задан.");
+    expect(api.reset).toHaveBeenCalledWith({
+      token: SECRET, new_password: "brand-new-pass", new_password_confirmation: "brand-new-pass",
+    });
+  });
+
+  it("an invitation link without a secret says it is the invitation that cannot be used", () => {
+    window.history.replaceState(null, "", "/#/reset-password?purpose=invite");
+    render(<ResetPassword />);
+    expect(screen.getByRole("alert").textContent).toBe("Эта ссылка-приглашение не работает. Запросите новую.");
+  });
+
+  it("a reset link keeps the reset wording and the sign-out warning", () => {
+    const { container } = render(<ResetPassword />);
+    expect(container.textContent).toContain("выйдете из аккаунта");
+    expect(container.textContent).not.toContain("Задайте пароль");
+  });
+
   it("opened without a secret: says so instead of offering a form", () => {
     window.history.replaceState(null, "", "/#/reset-password");
     const { container } = render(<ResetPassword />);

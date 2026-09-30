@@ -15,6 +15,11 @@
  * The backend spends the link, sets the password and signs the account out
  * everywhere, so afterwards the only step is signing in.
  *
+ * The same link, with `&purpose=invite`, is how a new owner or manager sets
+ * their FIRST password (2026-09-30): the screen then says "set your password"
+ * and welcomes them instead of talking about a reset and signing out. The
+ * purpose only changes words; the server decides what the link is.
+ *
  * It depends on no router and no session: main.tsx renders it ON ITS OWN when
  * the app is opened on a reset link — also in a browser that is still signed
  * in, where the panel's signed-in routes would otherwise send the link to the
@@ -41,16 +46,22 @@ export const RESET_ROUTE = "#/reset-password";
 export const isResetLink = (hash: string = window.location.hash): boolean =>
   hash === RESET_ROUTE || hash.startsWith(`${RESET_ROUTE}?`);
 
+interface LinkParams {
+  token: string;
+  /** Opened from an invitation email rather than "Forgot password?". */
+  invite: boolean;
+}
+
 /**
- * The secret from the link, read once; the address bar and this history entry
- * are rewritten without it.
+ * The secret (and what the link is for) from the link, read once; the address
+ * bar and this history entry are rewritten without them.
  */
-const takeTokenFromLink = (): string => {
+const takeLinkParams = (): LinkParams => {
   const hash = window.location.hash;
   const query = hash.includes("?") ? hash.slice(hash.indexOf("?") + 1) : "";
-  const token = new URLSearchParams(query).get("token") ?? "";
+  const params = new URLSearchParams(query);
   if (query !== "") window.history.replaceState(window.history.state, "", RESET_ROUTE);
-  return token;
+  return { token: params.get("token") ?? "", invite: params.get("purpose") === "invite" };
 };
 
 /** Into the full app, booted fresh so it reads the (now ended) session anew. */
@@ -62,7 +73,7 @@ const openApp = (route: "/login" | "/forgot-password") => {
 const ResetPassword = () => {
   const { t } = useLang();
   const tw = useWebText();
-  const [token] = useState(takeTokenFromLink);
+  const [{ token, invite }] = useState(takeLinkParams);
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [busy, setBusy] = useState(false);
@@ -102,11 +113,11 @@ const ResetPassword = () => {
           <h1 className="login-brand">Cyber Place</h1>
         </div>
         <img className="login-logo" src="./logo.png" alt="" />
-        <h2 className="login-title">{t("auth.resetTitle")}</h2>
+        <h2 className="login-title">{invite ? tw("web.invite.title") : t("auth.resetTitle")}</h2>
 
         {outcome?.kind === "done" ? (
           <div className="login-card web-login__card" role="status">
-            <p className="web-login__note">{t("reset.successDone")}</p>
+            <p className="web-login__note">{invite ? tw("web.invite.done") : t("reset.successDone")}</p>
             <Button type="button" onClick={() => openApp("/login")}>
               {t("login.title")}
             </Button>
@@ -114,7 +125,7 @@ const ResetPassword = () => {
         ) : linkUnusable ? (
           <div className="login-card web-login__card">
             <div className="error web-login__error" role="alert">
-              {outcome?.kind === "failed" ? outcome.message : tw("web.reset.noLink")}
+              {outcome?.kind === "failed" ? outcome.message : tw(invite ? "web.invite.noLink" : "web.reset.noLink")}
             </div>
             <Button type="button" onClick={() => openApp("/forgot-password")}>
               {tw("web.reset.newLink")}
@@ -125,6 +136,7 @@ const ResetPassword = () => {
           </div>
         ) : (
           <form className="login-card web-login__card" onSubmit={submit}>
+            {invite && <p className="web-login__note">{tw("web.invite.welcome")}</p>}
             <PasswordInput
               label={t("settings.newPassword")}
               autoComplete="new-password"
@@ -148,9 +160,9 @@ const ResetPassword = () => {
               </div>
             )}
             <Button disabled={busy || pw.length < MIN_LENGTH || pw2 === ""}>
-              {busy ? t("auth.sending") : t("settings.updatePassword")}
+              {busy ? t("auth.sending") : invite ? tw("web.invite.submit") : t("settings.updatePassword")}
             </Button>
-            <p className="web-login__note">{tw("web.reset.everywhere")}</p>
+            {!invite && <p className="web-login__note">{tw("web.reset.everywhere")}</p>}
             <button type="button" className="login-forgot" onClick={() => openApp("/login")}>
               {t("auth.backToLogin")}
             </button>
