@@ -10,6 +10,7 @@
  *                              has, which would sign the desktop out too
  */
 import { request } from "@/api/client";
+import { loginChallenge } from "@web/web/loginChallenge";
 import type { LoginResult } from "../../vendor/panel/src/api/auth";
 
 export * from "../../vendor/panel/src/api/auth";
@@ -21,9 +22,11 @@ interface LoginResponseRaw {
 }
 
 export const apiLogin = async (email: string, password: string): Promise<LoginResult> => {
+  // A solved mosaic captcha rides along once (2026-10-01; see loginChallenge).
+  const captchaToken = loginChallenge.take();
   const res = await request<LoginResponseRaw>("/owner-web/session/login", {
     method: "POST",
-    body: { email, password },
+    body: captchaToken ? { email, password, captcha_token: captchaToken } : { email, password },
   });
   return {
     token: res.token,

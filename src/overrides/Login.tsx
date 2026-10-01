@@ -11,7 +11,10 @@
  *   - a language picked here is handed to the account that signs in next, so
  *     it is not asked the same question again seconds later;
  *   - inside Telegram there is no password at all: a Telegram session that
- *     ended is renewed by opening the Mini App again, so that is what shows.
+ *     ended is renewed by opening the Mini App again, so that is what shows;
+ *   - repeated wrong passwords (2026-10-01, the server's OwnerWebLoginGuard):
+ *     after 5 a mosaic captcha, after 10 "reset your password?", then a lock
+ *     the server counts down — this screen only shows what the server says.
  *
  * The scene is decoration and is treated as such: skipped when the viewer
  * asks for reduced motion, and if WebGL is unavailable it quietly leaves the
@@ -24,6 +27,7 @@ import { recentEmails } from "@/auth/recentEmails";
 import ForgotPasswordForm from "@/components/login/ForgotPasswordForm";
 import HudBackdrop from "@/components/login/HudBackdrop";
 import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
 import PasswordInput from "@/components/ui/PasswordInput";
 import SuggestInput from "@/components/ui/SuggestInput";
 import { useLang } from "@/i18n/LanguageContext";
@@ -31,6 +35,8 @@ import { notePreLoginChoice } from "@/i18n/languagePreference";
 import { Lang, LANGUAGES } from "@/i18n/translations";
 import { errorCode } from "@web/telegram/telegram";
 import { useWebText } from "@web/web/i18n";
+import { loginChallenge } from "@web/web/loginChallenge";
+import MosaicCaptcha from "@web/web/MosaicCaptcha";
 import { Component, FormEvent, lazy, ReactNode, Suspense, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -72,6 +78,10 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // The server's sign-in guard: a captcha to solve, a reset to offer, a lock to wait out.
+  const [captcha, setCaptcha] = useState(false);
+  const [offerReset, setOfferReset] = useState(false);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [known, setKnown] = useState<string[]>([]);
   const [motion] = useState(() => !prefersReducedMotion());
   const telegram = inTelegram();
@@ -89,9 +99,11 @@ const Login = () => {
     void recentEmails.forget(value).then(() => recentEmails.list().then(setKnown));
   };
 
+  const locked = lockedUntil !== null && Date.now() < lockedUntil;
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (busy) return;
+    if (busy || captcha || locked) return;
     setBusy(true);
     setError(null);
     try {
@@ -100,15 +112,33 @@ const Login = () => {
       // Read exactly as the desktop's sign-in reads it: a block by its key; a
       // coded refusal ("no web access", "owners only") in the server's own
       // words; wrong credentials as one sentence, never which half was wrong.
+      // The sign-in guard's codes add a step on top of the sentence.
       const status = (err as ApiError | undefined)?.status;
+      const code = errorCode(err);
       const blockedKey = blockingKeyOf(err);
-      if (blockedKey) setError(t(blockedKey));
-      else if (errorCode(err) && err instanceof Error) setError(err.message);
+      if (code === "captcha_required") {
+        setCaptcha(true);
+        setError(status === 422 ? t("login.invalidCredentials") : tw("web.captcha.needed"));
+      } else if (code === "reset_suggested") {
+        setError(t("login.invalidCredentials"));
+        setOfferReset(true);
+      } else if (code === "login_locked") {
+        const seconds = Number((err as ApiError).body && ((err as ApiError).body as { retry_after?: unknown }).retry_after) || 0;
+        setLockedUntil(Date.now() + seconds * 1000);
+        setError(err instanceof Error ? err.message : t("login.failed"));
+      } else if (blockedKey) setError(t(blockedKey));
+      else if (code && err instanceof Error) setError(err.message);
       else if (status === 401 || status === 422) setError(t("login.invalidCredentials"));
       else setError(err instanceof Error ? err.message : t("login.failed"));
     } finally {
       setBusy(false);
     }
+  };
+
+  const captchaSolved = (token: string) => {
+    loginChallenge.set(token);
+    setCaptcha(false);
+    setError(tw("web.captcha.solved"));
   };
 
   return (
@@ -189,13 +219,30 @@ const Login = () => {
                     {error}
                   </div>
                 )}
+                {captcha && <MosaicCaptcha onSolved={captchaSolved} />}
                 <button type="button" className="login-forgot login-flip-back" onClick={() => flipTo("forgot")}>
                   {t("auth.forgot")}
                 </button>
-                <Button disabled={busy || email.trim() === "" || password === ""}>
+                <Button disabled={busy || captcha || locked || email.trim() === "" || password === ""}>
                   {busy ? t("login.signingIn") : t("login.title")}
                 </Button>
               </form>
+
+              {offerReset && (
+                <Modal open onClose={() => setOfferReset(false)}>
+                  <div className="card web-login__reset" role="dialog" aria-label={tw("web.login.resetAsk")}>
+                    <p>{tw("web.login.resetAsk")}</p>
+                    <div className="row-between">
+                      <Button type="button" variant="secondary" onClick={() => setOfferReset(false)}>
+                        {tw("web.login.resetNo")}
+                      </Button>
+                      <Button type="button" onClick={() => { setOfferReset(false); flipTo("forgot"); }}>
+                        {tw("web.login.resetYes")}
+                      </Button>
+                    </div>
+                  </div>
+                </Modal>
+              )}
 
               {/* The reverse face; `inert` keeps the hidden side out of the tab order. */}
               <div className="login-flip-face-back" inert={face === "login" || undefined}>

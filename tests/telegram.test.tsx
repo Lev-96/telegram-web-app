@@ -162,13 +162,14 @@ describe("the Telegram gate", () => {
   });
 
   it("a blocked address gets the block screen, not a generic refusal (2026-10-01)", async () => {
-    requests.next = Object.assign(new Error("Your IP is blocked."), { status: 403, body: { code: "ip_blocked" } });
+    requests.next = Object.assign(new Error("You have been blocked."), { status: 403, body: { code: "access_blocked" } });
     render(
       <TelegramGate launch={launch()}>
         <p>panel</p>
       </TelegramGate>,
     );
-    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("from your IP address has been closed"));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("You no longer have access to Cyber Place."));
+    expect(screen.getByRole("alert").textContent).not.toMatch(/IP|country|administrator/i);
     expect(screen.queryByText("panel")).toBeNull();
   });
 });

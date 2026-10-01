@@ -25,6 +25,15 @@ describe("web auth api", () => {
     expect(res).toEqual({ token: "7|web", user: { id: 7, name: "Owner", email: "o@example.test", role: "company_owner" } });
   });
 
+  it("carries a solved captcha once, then never again (2026-10-01)", async () => {
+    const { loginChallenge } = await import("@web/web/loginChallenge");
+    loginChallenge.set("solved-token");
+    await apiLogin("o@example.test", "pw");
+    await apiLogin("o@example.test", "pw");
+    expect(calls[0].body).toEqual({ email: "o@example.test", password: "pw", captcha_token: "solved-token" });
+    expect(calls[1].body).toEqual({ email: "o@example.test", password: "pw" });
+  });
+
   it("signs out only this session: /owner-web/session/logout, not /session/logout", async () => {
     await apiLogout();
     expect(calls[0].url).toMatch(/\/owner-web\/session\/logout$/);
