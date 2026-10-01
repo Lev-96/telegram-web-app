@@ -173,6 +173,15 @@ reopen, reopen with wiped storage, the web on two new devices: no picker.
 This relies on the panel's `LanguageContext` importing `@/i18n/languagePreference`
 by alias (changed 2026-09-30); a relative import cannot be overridden here.
 
+## Sign-in guard and owners only (2026-10-01)
+
+- **Only owners sign in here.** The backend refuses a manager with `client_access_role_not_allowed` (shown in the server's words), and the account switcher offers no managers.
+- **Repeated wrong passwords** (backend `OwnerWebLoginGuard`), handled in `src/overrides/Login.tsx`:
+  - `captcha_required`: shows `src/web/MosaicCaptcha.tsx` (the server draws the picture and keeps the spot). The solved token goes into `src/web/loginChallenge.ts`; the web `apiLogin` sends it once.
+  - `reset_suggested`: a "Reset your password?" modal that turns the card to the reset face.
+  - `login_locked`: the server's sentence, with sign-in disabled for `retry_after`.
+- Tests: `tests/login.test.tsx` ("the sign-in guard"), `tests/auth.test.ts`.
+
 ## Address block (2026-10-01)
 
 When the backend answers `ip_blocked` / `country_blocked`, the panel's `NetworkBlockedScreen` replaces everything; `TelegramGate` shows the same screen instead of a generic "refused" (tested in `tests/telegram.test.tsx`). Web and Telegram owners have desktop parity (backend `client_access.denied_routes`), so no feature is hidden here either.
