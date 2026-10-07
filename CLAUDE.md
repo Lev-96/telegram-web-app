@@ -177,7 +177,7 @@ by alias (changed 2026-09-30); a relative import cannot be overridden here.
 
 - **Only owners sign in here.** The backend refuses a manager with `client_access_role_not_allowed` (shown in the server's words), and the account switcher offers no managers.
 - **Repeated wrong passwords** (backend `StaffLoginGuard`), handled in `src/overrides/Login.tsx` with the PANEL's shared components (2026-10-07; the web's own `MosaicCaptcha`/`loginChallenge` were removed):
-  - `captcha_required`: `@/components/login/CaptchaDialog` (`client="owner_web"`). The pass goes into `@/auth/loginChallenge`; `src/overrides/auth.ts` `apiLogin` sends it once. Every attempt after the 5th failure needs a new pass.
+  - `captcha_required`: `@/components/login/CaptchaDialog` (`client="owner_web"`) driven by the panel's `@/auth/useLoginCaptcha`. Solved → back to the form ("check passed", focus on the email or password); it NEVER signs in by itself (fixed 2026-10-07 — the auto-resend of wrong credentials looped captcha after captcha). The pass goes into `@/auth/loginChallenge`; `src/overrides/auth.ts` `apiLogin` sends it once with the next Sign in. Every attempt after the 5th failure needs a new pass.
   - `reset_suggested`: a "Reset your password?" modal that turns the card to the reset face.
   - `login_locked` (423) / `too_many_attempts` (429): `@/components/login/LoginHold` counts down from `retry_after`, then says sign-in can be tried again.
   - Needs a pinned `panel.ref` that contains these components.
