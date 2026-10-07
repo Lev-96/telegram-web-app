@@ -122,22 +122,35 @@ const fillAndSubmit = (error: Error) => {
 };
 
 describe("the sign-in guard (2026-10-01, the shared mosaic and countdown since 2026-10-07)", () => {
-  it("a wrong password that now needs the mosaic: it opens; solved, the same sign-in goes again with its pass", async () => {
+  // The bug of 2026-10-07: a solved mosaic re-sent the same wrong credentials
+  // by itself, which failed and opened the next mosaic at once.
+  it("a wrong password that now needs the mosaic: it opens; solved, it goes back to the form and sends nothing", async () => {
+    auth.login.mockClear();
     const out = await submit(fail(422, { errors: { password: ["x"] }, code: "captcha_required" }));
     expect(out).toBe("Неверный логин или пароль");
     await screen.findByRole("group", { name: "Подтвердите, что вы человек" });
     await waitFor(() => expect(screen.getAllByRole("button", { name: /^Кусочек / })).toHaveLength(9));
     expect(captchaApi.calls[0].path).toBe("/auth/captcha?client=owner_web");
 
-    const { loginChallenge } = await import("@/auth/loginChallenge");
-    const passes: Array<string | null> = [];
-    auth.login.mockImplementationOnce(async () => { passes.push(loginChallenge.take()); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Проверить" })); });
-
     expect(captchaApi.calls.find((c) => c.method === "POST")).toEqual({
       path: "/auth/captcha?client=owner_web", method: "POST", body: { id: "c1", order: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
     });
-    await waitFor(() => expect(passes).toEqual(["solved-token"]), { timeout: 2000 });
+
+    expect(await screen.findByText("Проверка пройдена. Проверьте email и пароль и нажмите «Вход».", {}, { timeout: 2000 })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Подтвердите, что вы человек" })).toBeNull();
+    // Nothing signed in by itself, and no second picture asked for.
+    expect(auth.login).toHaveBeenCalledTimes(1);
+    expect(captchaApi.calls.filter((c) => c.method === "GET")).toHaveLength(1);
+    expect(document.activeElement).toBe(document.querySelector('input[type="password"]'));
+
+    // The corrected password goes once, with the pass.
+    const { loginChallenge } = await import("@/auth/loginChallenge");
+    const sent: Array<[string, string, string | null]> = [];
+    auth.login.mockImplementationOnce(async (email: string, password: string) => { sent.push([email, password, loginChallenge.take()]); });
+    fireEvent.change(document.querySelector('input[type="password"]')!, { target: { value: "right-one" } });
+    fireEvent.submit(document.querySelector("form")!);
+    await waitFor(() => expect(sent).toEqual([["o@example.test", "right-one", "solved-token"]]));
   });
 
   it("a wrong mosaic says so and brings a new picture", async () => {

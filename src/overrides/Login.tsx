@@ -13,8 +13,9 @@
  *   - inside Telegram there is no password at all: a Telegram session that
  *     ended is renewed by opening the Mini App again, so that is what shows;
  *   - repeated wrong passwords (2026-10-01, the server's StaffLoginGuard):
- *     from the 5th a mosaic for every attempt (the panel's own CaptchaDialog,
- *     shared with the desktop since 2026-10-07), after 10 "reset your
+ *     from the 5th a mosaic for every attempt (the panel's own CaptchaDialog
+ *     and useLoginCaptcha, shared with the desktop since 2026-10-07; solving
+ *     it returns to the form, it never signs in by itself), after 10 "reset your
  *     password?", then a lock counted down from the server's own seconds
  *     (the panel's LoginHold) — this screen decides nothing, the server does.
  *
@@ -37,10 +38,10 @@ import { notePreLoginChoice } from "@/i18n/languagePreference";
 import { Lang, LANGUAGES } from "@/i18n/translations";
 import { errorCode } from "@web/telegram/telegram";
 import { useWebText } from "@web/web/i18n";
-import { loginChallenge } from "@/auth/loginChallenge";
+import { useLoginCaptcha } from "@/auth/useLoginCaptcha";
 import CaptchaDialog from "@/components/login/CaptchaDialog";
 import LoginHold, { HoldKind } from "@/components/login/LoginHold";
-import { Component, FormEvent, lazy, ReactNode, Suspense, useCallback, useEffect, useState } from "react";
+import { Component, FormEvent, lazy, ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Same split as the desktop: three.js arrives after the form.
@@ -90,7 +91,9 @@ const Login = () => {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // The server's sign-in guard: a mosaic to solve, a reset to offer, a hold to wait out.
-  const [captchaOpen, setCaptchaOpen] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const captcha = useLoginCaptcha(emailRef, passwordRef);
   const [offerReset, setOfferReset] = useState(false);
   const [hold, setHold] = useState<Hold | null>(null);
   const [holdOver, setHoldOver] = useState(false);
@@ -115,6 +118,7 @@ const Login = () => {
     setBusy(true);
     setError(null);
     setHoldOver(false);
+    captcha.attempting();
     try {
       await login(email.trim(), password);
     } catch (err) {
@@ -130,9 +134,10 @@ const Login = () => {
         setHold({ kind: status === 423 ? "locked" : "throttled", seconds: retryAfter, startedAt: performance.now() });
       } else if (code === "captcha_required") {
         // A wrong password that now needs the mosaic (422), or an attempt held
-        // back for it (428): the mosaic, then the same attempt again.
+        // back for it (428): the mosaic, then back to the form — never a
+        // sign-in sent by the mosaic itself.
         if (status === 422) setError(t("login.invalidCredentials"));
-        setCaptchaOpen(true);
+        captcha.ask();
       } else if (code === "reset_suggested") {
         setError(t("login.invalidCredentials"));
         setOfferReset(true);
@@ -149,12 +154,6 @@ const Login = () => {
     e.preventDefault();
     if (busy || hold) return;
     await attempt();
-  };
-
-  const captchaSolved = (token: string) => {
-    loginChallenge.set(token);
-    setCaptchaOpen(false);
-    void attempt();
   };
 
   // The time is up: the form is open again (the server decides on the next try).
@@ -212,6 +211,7 @@ const Login = () => {
                 inert={face === "forgot" || undefined}
               >
                 <SuggestInput
+                  ref={emailRef}
                   label={t("auth.email")}
                   type="email"
                   inputMode="email"
@@ -226,6 +226,7 @@ const Login = () => {
                   autoFocus={face === "login"}
                 />
                 <PasswordInput
+                  ref={passwordRef}
                   label={t("auth.password")}
                   placeholder={t("login.passwordPlaceholder")}
                   autoComplete="current-password"
@@ -237,6 +238,8 @@ const Login = () => {
                   <LoginHold kind={hold.kind} seconds={hold.seconds} startedAt={hold.startedAt} onOver={holdOverNow} />
                 ) : holdOver ? (
                   <div className="login-hold is-over" role="status">{t("login.hold.ready")}</div>
+                ) : captcha.passed ? (
+                  <div className="login-hold is-over" role="status">{t("login.captchaPassed")}</div>
                 ) : error && (
                   <div className="error web-login__error" role="alert">
                     {error}
@@ -266,7 +269,7 @@ const Login = () => {
                 </Modal>
               )}
 
-              <CaptchaDialog open={captchaOpen} client="owner_web" onSolved={captchaSolved} onClose={() => setCaptchaOpen(false)} />
+              <CaptchaDialog open={captcha.open} client="owner_web" onSolved={captcha.solved} onClose={captcha.close} />
 
               {/* The reverse face; `inert` keeps the hidden side out of the tab order. */}
               <div className="login-flip-face-back" inert={face === "login" || undefined}>
