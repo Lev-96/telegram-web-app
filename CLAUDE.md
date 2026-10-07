@@ -176,10 +176,11 @@ by alias (changed 2026-09-30); a relative import cannot be overridden here.
 ## Sign-in guard and owners only (2026-10-01)
 
 - **Only owners sign in here.** The backend refuses a manager with `client_access_role_not_allowed` (shown in the server's words), and the account switcher offers no managers.
-- **Repeated wrong passwords** (backend `OwnerWebLoginGuard`), handled in `src/overrides/Login.tsx`:
-  - `captcha_required`: shows `src/web/MosaicCaptcha.tsx` (the server draws the picture and keeps the spot). The solved token goes into `src/web/loginChallenge.ts`; the web `apiLogin` sends it once.
+- **Repeated wrong passwords** (backend `StaffLoginGuard`), handled in `src/overrides/Login.tsx` with the PANEL's shared components (2026-10-07; the web's own `MosaicCaptcha`/`loginChallenge` were removed):
+  - `captcha_required`: `@/components/login/CaptchaDialog` (`client="owner_web"`). The pass goes into `@/auth/loginChallenge`; `src/overrides/auth.ts` `apiLogin` sends it once. Every attempt after the 5th failure needs a new pass.
   - `reset_suggested`: a "Reset your password?" modal that turns the card to the reset face.
-  - `login_locked`: the server's sentence, with sign-in disabled for `retry_after`.
+  - `login_locked` (423) / `too_many_attempts` (429): `@/components/login/LoginHold` counts down from `retry_after`, then says sign-in can be tried again.
+  - Needs a pinned `panel.ref` that contains these components.
 - Tests: `tests/login.test.tsx` ("the sign-in guard"), `tests/auth.test.ts`.
 
 ## Address block (2026-10-01)
