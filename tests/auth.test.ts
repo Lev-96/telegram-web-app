@@ -26,7 +26,7 @@ describe("web auth api", () => {
   });
 
   it("carries a solved captcha once, then never again (2026-10-01)", async () => {
-    const { loginChallenge } = await import("@web/web/loginChallenge");
+    const { loginChallenge } = await import("@/auth/loginChallenge");
     loginChallenge.set("solved-token");
     await apiLogin("o@example.test", "pw");
     await apiLogin("o@example.test", "pw");

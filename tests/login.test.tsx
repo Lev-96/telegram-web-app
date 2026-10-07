@@ -5,15 +5,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const auth = vi.hoisted(() => ({ login: vi.fn() }));
 vi.mock("@/auth/AuthContext", () => ({ useAuth: () => auth }));
-const captchaApi = vi.hoisted(() => ({ calls: [] as Array<{ path: string; body?: unknown }>, solve: true }));
+const captchaApi = vi.hoisted(() => ({ calls: [] as Array<{ path: string; method: string; body?: unknown }>, solve: true, n: 0 }));
 vi.mock("@/api/client", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   request: async (path: string, opts: { method?: string; body?: unknown } = {}) => {
-    captchaApi.calls.push({ path, body: opts.body });
-    if (path === "/owner-web/captcha" && (opts.method ?? "GET") === "GET") {
-      return { id: "c1", background: "data:image/png;base64,AA", piece: "data:image/png;base64,AA", piece_y: 20, width: 320, height: 160, piece_size: 56 };
+    const method = opts.method ?? "GET";
+    captchaApi.calls.push({ path, method, body: opts.body });
+    if (path.startsWith("/auth/captcha") && method === "GET") {
+      return { id: `c${++captchaApi.n}`, image: "data:image/jpeg;base64,AA", grid: 3, size: 360 };
     }
-    if (path === "/owner-web/captcha") {
+    if (path.startsWith("/auth/captcha")) {
       if (captchaApi.solve) return { captcha_token: "solved-token" };
       throw Object.assign(new Error("miss"), { status: 422, body: { code: "captcha_failed" } });
     }
@@ -53,6 +54,7 @@ const submit = async (error: Error) => {
 afterEach(() => {
   captchaApi.calls = [];
   captchaApi.solve = true;
+  captchaApi.n = 0;
   cleanup();
   document.documentElement.dataset.shell = "";
 });
@@ -110,32 +112,43 @@ describe("web sign-in card", () => {
   });
 });
 
-describe("the sign-in guard (2026-10-01)", () => {
-  it("after the 5th failure: the mosaic; solved, its token rides on the next attempt", async () => {
+const fillAndSubmit = (error: Error) => {
+  auth.login.mockRejectedValueOnce(error);
+  const view = renderAt();
+  fireEvent.change(view.container.querySelector('input[type="email"]')!, { target: { value: "o@example.test" } });
+  fireEvent.change(view.container.querySelector('input[type="password"]')!, { target: { value: "pw" } });
+  fireEvent.submit(view.container.querySelector("form")!);
+  return view;
+};
+
+describe("the sign-in guard (2026-10-01, the shared mosaic and countdown since 2026-10-07)", () => {
+  it("a wrong password that now needs the mosaic: it opens; solved, the same sign-in goes again with its pass", async () => {
     const out = await submit(fail(422, { errors: { password: ["x"] }, code: "captcha_required" }));
     expect(out).toBe("Неверный логин или пароль");
     await screen.findByRole("group", { name: "Подтвердите, что вы человек" });
-    const slider = screen.getByRole("slider");
-    expect(screen.getByRole("button", { name: "Вход" }).hasAttribute("disabled")).toBe(true);
+    await waitFor(() => expect(screen.getAllByRole("button", { name: /^Кусочек / })).toHaveLength(9));
+    expect(captchaApi.calls[0].path).toBe("/auth/captcha?client=owner_web");
 
-    fireEvent.change(slider, { target: { value: "150" } });
+    const { loginChallenge } = await import("@/auth/loginChallenge");
+    const passes: Array<string | null> = [];
+    auth.login.mockImplementationOnce(async () => { passes.push(loginChallenge.take()); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Проверить" })); });
 
-    expect(captchaApi.calls.find((c) => c.body)?.body).toEqual({ id: "c1", x: 150 });
-    await waitFor(() => expect(screen.queryByRole("slider")).toBeNull());
-    expect(screen.getByRole("alert").textContent).toBe("Готово. Введите пароль ещё раз.");
-    const { loginChallenge } = await import("@web/web/loginChallenge");
-    expect(loginChallenge.take()).toBe("solved-token");
+    expect(captchaApi.calls.find((c) => c.method === "POST")).toEqual({
+      path: "/auth/captcha?client=owner_web", method: "POST", body: { id: "c1", order: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
+    });
+    await waitFor(() => expect(passes).toEqual(["solved-token"]), { timeout: 2000 });
   });
 
-  it("a miss draws a new picture", async () => {
+  it("a wrong mosaic says so and brings a new picture", async () => {
     captchaApi.solve = false;
-    await submit(fail(428, { code: "captcha_required", message: "x" }));
-    await screen.findByRole("slider");
-    fireEvent.change(screen.getByRole("slider"), { target: { value: "10" } });
+    fillAndSubmit(fail(428, { code: "captcha_required", message: "x" }));
+    await waitFor(() => expect(screen.getAllByRole("button", { name: /^Кусочек / })).toHaveLength(9));
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Проверить" })); });
-    await screen.findByText("Не совсем. Вот новая картинка, попробуйте ещё раз.");
-    expect(captchaApi.calls.filter((c) => c.path === "/owner-web/captcha" && !c.body)).toHaveLength(2);
+    await screen.findByText("Мозаика собрана неправильно. Вот новая картинка, попробуйте ещё раз.");
+    await waitFor(() => expect(captchaApi.calls.filter((c) => c.method === "GET")).toHaveLength(2));
+    // An attempt held back for the mosaic (428) is not called a wrong password.
+    expect(screen.queryByText("Неверный логин или пароль")).toBeNull();
   });
 
   it("after the 10th failure: offers a password reset, and yes turns to it", async () => {
@@ -145,9 +158,18 @@ describe("the sign-in guard (2026-10-01)", () => {
     expect(screen.queryByText("Не получается войти? Сбросить пароль?")).toBeNull();
   });
 
-  it("locked: the server's sentence, and no sign-in until the time is up", async () => {
-    const out = await submit(fail(423, { code: "login_locked", retry_after: 3000, message: "Вход закрыт ещё на 50 мин." }, "Вход закрыт ещё на 50 мин."));
-    expect(out).toBe("Вход закрыт ещё на 50 мин.");
+  it("locked: a countdown from the server's seconds, and no sign-in until the time is up", async () => {
+    fillAndSubmit(fail(423, { code: "login_locked", retry_after: 3000, message: "Вход закрыт ещё на 50 мин." }, "Вход закрыт ещё на 50 мин."));
+    expect(await screen.findByText("Вход временно заблокирован")).toBeTruthy();
+    expect(screen.getByText("Попробовать снова через")).toBeTruthy();
+    expect(screen.getByText("50 мин 00 сек")).toBeTruthy();
+    expect(screen.queryByText("Вход закрыт ещё на 50 мин.")).toBeNull();
     expect(screen.getByRole("button", { name: "Вход" }).hasAttribute("disabled")).toBe(true);
+  });
+
+  it("too many tries in a minute: a countdown too, not 'in a minute'", async () => {
+    fillAndSubmit(fail(429, { code: "too_many_attempts", retry_after: 42, message: "Слишком много попыток входа. Попробуйте через минуту." }));
+    expect(await screen.findByText("Слишком много попыток входа")).toBeTruthy();
+    expect(screen.getByText("42 сек")).toBeTruthy();
   });
 });

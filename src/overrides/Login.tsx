@@ -12,9 +12,11 @@
  *     it is not asked the same question again seconds later;
  *   - inside Telegram there is no password at all: a Telegram session that
  *     ended is renewed by opening the Mini App again, so that is what shows;
- *   - repeated wrong passwords (2026-10-01, the server's OwnerWebLoginGuard):
- *     after 5 a mosaic captcha, after 10 "reset your password?", then a lock
- *     the server counts down — this screen only shows what the server says.
+ *   - repeated wrong passwords (2026-10-01, the server's StaffLoginGuard):
+ *     from the 5th a mosaic for every attempt (the panel's own CaptchaDialog,
+ *     shared with the desktop since 2026-10-07), after 10 "reset your
+ *     password?", then a lock counted down from the server's own seconds
+ *     (the panel's LoginHold) — this screen decides nothing, the server does.
  *
  * The scene is decoration and is treated as such: skipped when the viewer
  * asks for reduced motion, and if WebGL is unavailable it quietly leaves the
@@ -35,9 +37,10 @@ import { notePreLoginChoice } from "@/i18n/languagePreference";
 import { Lang, LANGUAGES } from "@/i18n/translations";
 import { errorCode } from "@web/telegram/telegram";
 import { useWebText } from "@web/web/i18n";
-import { loginChallenge } from "@web/web/loginChallenge";
-import MosaicCaptcha from "@web/web/MosaicCaptcha";
-import { Component, FormEvent, lazy, ReactNode, Suspense, useEffect, useState } from "react";
+import { loginChallenge } from "@/auth/loginChallenge";
+import CaptchaDialog from "@/components/login/CaptchaDialog";
+import LoginHold, { HoldKind } from "@/components/login/LoginHold";
+import { Component, FormEvent, lazy, ReactNode, Suspense, useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Same split as the desktop: three.js arrives after the form.
@@ -64,6 +67,14 @@ class SceneGuard extends Component<{ children: ReactNode }, { failed: boolean }>
 /** Which face of the card is showing. */
 type Face = "login" | "forgot";
 
+/** The server holding sign-in back for a while: a lock (423) or the per-minute limit (429). */
+interface Hold { kind: HoldKind; seconds: number; startedAt: number }
+
+const retryAfterOf = (err: unknown): number | null => {
+  const value = Number((err as { body?: { retry_after?: unknown } } | undefined)?.body?.retry_after);
+  return Number.isFinite(value) && value > 0 ? Math.ceil(value) : null;
+};
+
 const Login = () => {
   const { login } = useAuth();
   const { t, lang, setLang } = useLang();
@@ -78,10 +89,11 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // The server's sign-in guard: a captcha to solve, a reset to offer, a lock to wait out.
-  const [captcha, setCaptcha] = useState(false);
+  // The server's sign-in guard: a mosaic to solve, a reset to offer, a hold to wait out.
+  const [captchaOpen, setCaptchaOpen] = useState(false);
   const [offerReset, setOfferReset] = useState(false);
-  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [hold, setHold] = useState<Hold | null>(null);
+  const [holdOver, setHoldOver] = useState(false);
   const [known, setKnown] = useState<string[]>([]);
   const [motion] = useState(() => !prefersReducedMotion());
   const telegram = inTelegram();
@@ -99,13 +111,10 @@ const Login = () => {
     void recentEmails.forget(value).then(() => recentEmails.list().then(setKnown));
   };
 
-  const locked = lockedUntil !== null && Date.now() < lockedUntil;
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (busy || captcha || locked) return;
+  const attempt = async () => {
     setBusy(true);
     setError(null);
+    setHoldOver(false);
     try {
       await login(email.trim(), password);
     } catch (err) {
@@ -116,16 +125,17 @@ const Login = () => {
       const status = (err as ApiError | undefined)?.status;
       const code = errorCode(err);
       const blockedKey = blockingKeyOf(err);
-      if (code === "captcha_required") {
-        setCaptcha(true);
-        setError(status === 422 ? t("login.invalidCredentials") : tw("web.captcha.needed"));
+      const retryAfter = retryAfterOf(err);
+      if ((status === 423 || status === 429) && retryAfter !== null) {
+        setHold({ kind: status === 423 ? "locked" : "throttled", seconds: retryAfter, startedAt: performance.now() });
+      } else if (code === "captcha_required") {
+        // A wrong password that now needs the mosaic (422), or an attempt held
+        // back for it (428): the mosaic, then the same attempt again.
+        if (status === 422) setError(t("login.invalidCredentials"));
+        setCaptchaOpen(true);
       } else if (code === "reset_suggested") {
         setError(t("login.invalidCredentials"));
         setOfferReset(true);
-      } else if (code === "login_locked") {
-        const seconds = Number((err as ApiError).body && ((err as ApiError).body as { retry_after?: unknown }).retry_after) || 0;
-        setLockedUntil(Date.now() + seconds * 1000);
-        setError(err instanceof Error ? err.message : t("login.failed"));
       } else if (blockedKey) setError(t(blockedKey));
       else if (code && err instanceof Error) setError(err.message);
       else if (status === 401 || status === 422) setError(t("login.invalidCredentials"));
@@ -135,11 +145,20 @@ const Login = () => {
     }
   };
 
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (busy || hold) return;
+    await attempt();
+  };
+
   const captchaSolved = (token: string) => {
     loginChallenge.set(token);
-    setCaptcha(false);
-    setError(tw("web.captcha.solved"));
+    setCaptchaOpen(false);
+    void attempt();
   };
+
+  // The time is up: the form is open again (the server decides on the next try).
+  const holdOverNow = useCallback(() => { setHold(null); setHoldOver(true); }, []);
 
   return (
     <div className="login-shell web-login">
@@ -199,7 +218,7 @@ const Login = () => {
                   autoComplete="username"
                   placeholder="your@email.com"
                   value={email}
-                  onValueChange={setEmail}
+                  onValueChange={(value) => { setEmail(value); setHold(null); setHoldOver(false); }}
                   options={known}
                   onRemoveOption={forgetEmail}
                   removeHint={t("login.forgetEmail")}
@@ -214,23 +233,26 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                {error && (
+                {hold ? (
+                  <LoginHold kind={hold.kind} seconds={hold.seconds} startedAt={hold.startedAt} onOver={holdOverNow} />
+                ) : holdOver ? (
+                  <div className="login-hold is-over" role="status">{t("login.hold.ready")}</div>
+                ) : error && (
                   <div className="error web-login__error" role="alert">
                     {error}
                   </div>
                 )}
-                {captcha && <MosaicCaptcha onSolved={captchaSolved} />}
                 <button type="button" className="login-forgot login-flip-back" onClick={() => flipTo("forgot")}>
                   {t("auth.forgot")}
                 </button>
-                <Button disabled={busy || captcha || locked || email.trim() === "" || password === ""}>
+                <Button disabled={busy || hold !== null || email.trim() === "" || password === ""}>
                   {busy ? t("login.signingIn") : t("login.title")}
                 </Button>
               </form>
 
               {offerReset && (
                 <Modal open onClose={() => setOfferReset(false)}>
-                  <div className="card web-login__reset" role="dialog" aria-label={tw("web.login.resetAsk")}>
+                  <div className="card web-login__reset">
                     <p>{tw("web.login.resetAsk")}</p>
                     <div className="row-between">
                       <Button type="button" variant="secondary" onClick={() => setOfferReset(false)}>
@@ -243,6 +265,8 @@ const Login = () => {
                   </div>
                 </Modal>
               )}
+
+              <CaptchaDialog open={captchaOpen} client="owner_web" onSolved={captchaSolved} onClose={() => setCaptchaOpen(false)} />
 
               {/* The reverse face; `inert` keeps the hidden side out of the tab order. */}
               <div className="login-flip-face-back" inert={face === "login" || undefined}>

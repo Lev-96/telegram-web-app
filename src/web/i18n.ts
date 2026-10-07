@@ -52,30 +52,6 @@ export const WEB_TEXT = {
     am: "Հրավերի այս հղումը չի գործում։ Պահանջեք նորը։",
   },
   // The sign-in guard (2026-10-01): mosaic captcha, reset offer.
-  "web.captcha.title": { en: "Confirm you are a person", ru: "Подтвердите, что вы человек", am: "Հաստատեք, որ մարդ եք" },
-  "web.captcha.hint": {
-    en: "Slide the piece into its place in the picture.",
-    ru: "Передвиньте кусочек на его место в картинке.",
-    am: "Տեղափոխեք կտորը նկարում իր տեղը։",
-  },
-  "web.captcha.missed": {
-    en: "Not quite. Here is a new picture, try again.",
-    ru: "Не совсем. Вот новая картинка, попробуйте ещё раз.",
-    am: "Ոչ այնքան։ Ահա նոր նկար, փորձեք կրկին։",
-  },
-  "web.captcha.needed": {
-    en: "Too many failed attempts. Solve the puzzle to continue.",
-    ru: "Слишком много неудачных попыток. Соберите мозаику, чтобы продолжить.",
-    am: "Չափազանց շատ անհաջող փորձեր։ Հավաքեք խճանկարը՝ շարունակելու համար։",
-  },
-  "web.captcha.solved": {
-    en: "Done. Enter your password again.",
-    ru: "Готово. Введите пароль ещё раз.",
-    am: "Պատրաստ է։ Կրկին մուտքագրեք գաղտնաբառը։",
-  },
-  "web.captcha.slider": { en: "Piece position", ru: "Положение кусочка", am: "Կտորի դիրքը" },
-  "web.captcha.check": { en: "Check", ru: "Проверить", am: "Ստուգել" },
-  "web.captcha.reload": { en: "Another picture", ru: "Другая картинка", am: "Այլ նկար" },
   "web.login.resetAsk": {
     en: "Can't sign in? Reset your password?",
     ru: "Не получается войти? Сбросить пароль?",
