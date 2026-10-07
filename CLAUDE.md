@@ -182,6 +182,7 @@ by alias (changed 2026-09-30); a relative import cannot be overridden here.
   - `login_locked` (423) / `too_many_attempts` (429): `@/components/login/LoginHold` counts down from `retry_after`, then says sign-in can be tried again.
   - Needs a pinned `panel.ref` that contains these components.
 - Tests: `tests/login.test.tsx` ("the sign-in guard"), `tests/auth.test.ts`.
+- **Sign-in errors follow a language switch** (2026-10-07): `src/overrides/Login.tsx` keeps the error as the panel's `LocalizedText` (`@/i18n/localizedText`) and renders it at render time — panel keys via `t`, `web.*` keys via `tw`. Server refusal codes with web wording live in `src/web/i18n.ts` as `web.refusal.<code>` (`webRefusalKeyFor`; same text as the backend's `response.client-access.*`); a code without one keeps the server's sentence. Tests: `tests/login.language.test.tsx`.
 
 ## Address block (2026-10-01)
 
