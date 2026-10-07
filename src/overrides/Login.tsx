@@ -37,7 +37,8 @@ import { useLang } from "@/i18n/LanguageContext";
 import { notePreLoginChoice } from "@/i18n/languagePreference";
 import { Lang, LANGUAGES } from "@/i18n/translations";
 import { errorCode } from "@web/telegram/telegram";
-import { useWebText } from "@web/web/i18n";
+import { isWebTextKey, useWebText, webRefusalKeyFor } from "@web/web/i18n";
+import { LocalizedText, renderText, textKey, textLiteral } from "@/i18n/localizedText";
 import { useLoginCaptcha } from "@/auth/useLoginCaptcha";
 import CaptchaDialog from "@/components/login/CaptchaDialog";
 import LoginHold, { HoldKind } from "@/components/login/LoginHold";
@@ -88,7 +89,9 @@ const Login = () => {
   const flipTo = (next: Face) => navigate(next === "forgot" ? "/forgot-password" : "/login", { replace: true });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  // By meaning, not as a sentence: the language picker sits on this card, and
+  // a message on screen must follow a switch made after it appeared.
+  const [error, setError] = useState<LocalizedText | null>(null);
   const [busy, setBusy] = useState(false);
   // The server's sign-in guard: a mosaic to solve, a reset to offer, a hold to wait out.
   const emailRef = useRef<HTMLInputElement>(null);
@@ -123,12 +126,14 @@ const Login = () => {
       await login(email.trim(), password);
     } catch (err) {
       // Read exactly as the desktop's sign-in reads it: a block by its key; a
-      // coded refusal ("no web access", "owners only") in the server's own
-      // words; wrong credentials as one sentence, never which half was wrong.
+      // coded refusal ("owners only") by our key, the server's own words only
+      // for a code we have none for; wrong credentials as one sentence, never
+      // which half was wrong.
       // The sign-in guard's codes add a step on top of the sentence.
       const status = (err as ApiError | undefined)?.status;
       const code = errorCode(err);
       const blockedKey = blockingKeyOf(err);
+      const refusalKey = webRefusalKeyFor(code);
       const retryAfter = retryAfterOf(err);
       if ((status === 423 || status === 429) && retryAfter !== null) {
         setHold({ kind: status === 423 ? "locked" : "throttled", seconds: retryAfter, startedAt: performance.now() });
@@ -136,15 +141,16 @@ const Login = () => {
         // A wrong password that now needs the mosaic (422), or an attempt held
         // back for it (428): the mosaic, then back to the form — never a
         // sign-in sent by the mosaic itself.
-        if (status === 422) setError(t("login.invalidCredentials"));
+        if (status === 422) setError(textKey("login.invalidCredentials"));
         captcha.ask();
       } else if (code === "reset_suggested") {
-        setError(t("login.invalidCredentials"));
+        setError(textKey("login.invalidCredentials"));
         setOfferReset(true);
-      } else if (blockedKey) setError(t(blockedKey));
-      else if (code && err instanceof Error) setError(err.message);
-      else if (status === 401 || status === 422) setError(t("login.invalidCredentials"));
-      else setError(err instanceof Error ? err.message : t("login.failed"));
+      } else if (blockedKey) setError(textKey(blockedKey));
+      else if (refusalKey) setError(textKey(refusalKey));
+      else if (code && err instanceof Error) setError(textLiteral(err.message));
+      else if (status === 401 || status === 422) setError(textKey("login.invalidCredentials"));
+      else setError(err instanceof Error ? textLiteral(err.message) : textKey("login.failed"));
     } finally {
       setBusy(false);
     }
@@ -242,7 +248,7 @@ const Login = () => {
                   <div className="login-hold is-over" role="status">{t("login.captchaPassed")}</div>
                 ) : error && (
                   <div className="error web-login__error" role="alert">
-                    {error}
+                    {renderText(error, (key) => (isWebTextKey(key) ? tw(key) : t(key)))}
                   </div>
                 )}
                 <button type="button" className="login-forgot login-flip-back" onClick={() => flipTo("forgot")}>

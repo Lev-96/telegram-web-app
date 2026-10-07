@@ -64,9 +64,10 @@ describe("web sign-in errors, read as the desktop reads them", () => {
     expect(await submit(fail(422, { errors: { password: ["Invalid password"] } }))).toBe("Неверный логин или пароль");
   });
 
-  it("a role the web does not serve: the server's sentence, not 'wrong password'", async () => {
-    const text = "Для роли этого аккаунта такой способ входа недоступен.";
-    expect(await submit(fail(403, { message: text, code: "client_access_role_not_allowed" }, text))).toBe(text);
+  it("a role the web does not serve: said by its code in our words, not 'wrong password'", async () => {
+    const server = "Для роли этого аккаунта такой способ входа недоступен.";
+    expect(await submit(fail(403, { message: server, code: "client_access_role_not_allowed" }, server)))
+      .toBe("Этот способ входа доступен только владельцам клубов.");
   });
 
   it("a blocked company: the desktop's own blocked sentence", async () => {

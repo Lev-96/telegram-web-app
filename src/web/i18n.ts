@@ -76,6 +76,19 @@ export const WEB_TEXT = {
 
   "web.tg.signingIn": { en: "Signing in with Telegram…", ru: "Вход через Telegram…", am: "Մուտք Telegram-ով…" },
   "web.tg.linking": { en: "Linking your Telegram…", ru: "Привязываем Telegram…", am: "Կապում ենք Telegram-ը…" },
+  // The server's refusals of a web sign-in, said by their `code` so the
+  // sentence follows a language switch (2026-10-07). Same wording as the
+  // backend's `response.client-access.*`.
+  "web.refusal.client_access_role_not_allowed": {
+    en: "This way of signing in is for club owners only.",
+    ru: "Этот способ входа доступен только владельцам клубов.",
+    am: "Մուտքի այս եղանակը միայն ակումբների սեփականատերերի համար է։",
+  },
+  "web.refusal.client_access_owners_only": {
+    en: "Web and Telegram access is available to company owners only.",
+    ru: "Доступ через браузер и Telegram есть только у владельцев компаний.",
+    am: "Բրաուզերով և Telegram-ով մուտքը հասանելի է միայն ընկերությունների սեփականատերերին։",
+  },
   "web.tg.reopen": {
     en: "Your Telegram session has ended. Close the app and open it again from the bot.",
     ru: "Сеанс в Telegram завершён. Закройте приложение и снова откройте его из бота.",
@@ -87,6 +100,14 @@ export type WebTextKey = keyof typeof WEB_TEXT;
 
 export const webText = (key: WebTextKey, lang: Lang, ...args: Array<string | number>): string =>
   args.reduce<string>((text, arg, i) => text.split(`{${i}}`).join(String(arg)), WEB_TEXT[key][lang] ?? WEB_TEXT[key].en);
+
+export const isWebTextKey = (key: string): key is WebTextKey => Object.prototype.hasOwnProperty.call(WEB_TEXT, key);
+
+/** Our key for a refusal `code` the server sends this app, or null for a code we have no words for. */
+export const webRefusalKeyFor = (code: string | null): WebTextKey | null => {
+  const key = `web.refusal.${code}`;
+  return code && isWebTextKey(key) ? key : null;
+};
 
 /** `tw("web.signIn.title")` in the viewer's current language. */
 export const useWebText = () => {
