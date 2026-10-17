@@ -187,3 +187,12 @@ by alias (changed 2026-09-30); a relative import cannot be overridden here.
 ## Address block (2026-10-01)
 
 When the backend answers `ip_blocked` / `country_blocked`, the panel's `NetworkBlockedScreen` replaces everything; `TelegramGate` shows the same screen instead of a generic "refused" (tested in `tests/telegram.test.tsx`). Web and Telegram owners have desktop parity (backend `client_access.denied_routes`), so no feature is hidden here either.
+
+## Brand mark (2026-10-17)
+
+The logo comes from the panel's `public/logo.png` at `panel.ref`; the new wide
+mark appears here when `panel.ref` is bumped to a panel commit that has it.
+`.login-shell.web-login .login-logo` is 62px on phones (the old square mark's
+area). Tab and home-screen icons are square files in `src/web/icons/`
+(linked from `index.html`, bundled by Vite into `/assets/`); they used to be
+the wide `logo.png`.
