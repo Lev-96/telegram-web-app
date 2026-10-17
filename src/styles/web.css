@@ -730,8 +730,9 @@
     font-size: 15px;
   }
 
+  /* 62px: the wide 1.64:1 mark (2026-10-17) at the area the old 52px one had. */
   .login-shell.web-login .login-logo {
-    width: 52px;
+    width: 62px;
   }
 }
 
