@@ -21,88 +21,93 @@ export const WEB_TEXT = {
   "web.signIn.password": { en: "Password", ru: "Пароль", am: "Գաղտնաբառ" },
   "web.signIn.submit": { en: "Sign in", ru: "Войти", am: "Մուտք" },
   "web.signIn.busy": { en: "Signing in…", ru: "Вход…", am: "Մուտք…" },
-  "web.signIn.accessNote": {
-    en: "Access is given by the Cyber Place administrator. The address alone opens nothing.",
-    ru: "Доступ выдаёт администратор Cyber Place. Сам адрес ничего не открывает.",
-    am: "Մուտքը տրամադրում է Cyber Place-ի ադմինիստրատորը։ Միայն հասցեն ոչինչ չի բացում։",
+  "web.reset.noLink": {
+    en: "This reset link cannot be used. Ask for a new one.",
+    ru: "Эта ссылка для сброса не работает. Запросите новую.",
+    am: "Վերակայման այս հղումը չի գործում։ Պահանջեք նորը։",
   },
-  "web.signIn.forgot": {
-    en: "Forgot the password? Reset it in the desktop app or ask your administrator.",
-    ru: "Забыли пароль? Восстановите его в приложении для компьютера или обратитесь к администратору.",
-    am: "Մոռացե՞լ եք գաղտնաբառը։ Վերականգնեք այն համակարգչի հավելվածում կամ դիմեք ադմինիստրատորին։",
+  "web.reset.newLink": { en: "Send a new link", ru: "Отправить новую ссылку", am: "Ուղարկել նոր հղում" },
+  "web.reset.everywhere": {
+    en: "After the change you will be signed out on every device, the desktop app included.",
+    ru: "После смены пароля вы выйдете из аккаунта на всех устройствах, включая приложение для компьютера.",
+    am: "Փոփոխությունից հետո դուք դուրս կգաք բոլոր սարքերից, ներառյալ համակարգչի հավելվածը։",
   },
+  // A new owner's or manager's first password: the same screen, opened from
+  // the invitation email (`&purpose=invite`).
+  "web.invite.title": { en: "Set your password", ru: "Задайте пароль", am: "Սահմանեք գաղտնաբառը" },
+  "web.invite.welcome": {
+    en: "Welcome to Cyber Place. Choose the password you will sign in with.",
+    ru: "Добро пожаловать в Cyber Place. Придумайте пароль для входа.",
+    am: "Բարի գալուստ Cyber Place։ Ընտրեք գաղտնաբառ, որով մուտք կգործեք։",
+  },
+  "web.invite.submit": { en: "Set password", ru: "Сохранить пароль", am: "Պահպանել գաղտնաբառը" },
+  "web.invite.done": {
+    en: "Your password is set. Sign in with your email and the new password.",
+    ru: "Пароль задан. Войдите со своим email и новым паролем.",
+    am: "Գաղտնաբառը սահմանված է։ Մուտք գործեք ձեր էլ. հասցեով և նոր գաղտնաբառով։",
+  },
+  "web.invite.noLink": {
+    en: "This invitation link cannot be used. Ask for a new one.",
+    ru: "Эта ссылка-приглашение не работает. Запросите новую.",
+    am: "Հրավերի այս հղումը չի գործում։ Պահանջեք նորը։",
+  },
+  // The sign-in guard (2026-10-01): mosaic captcha, reset offer.
+  "web.login.resetAsk": {
+    en: "Can't sign in? Reset your password?",
+    ru: "Не получается войти? Сбросить пароль?",
+    am: "Չե՞ք կարողանում մուտք գործել։ Վերականգնե՞լ գաղտնաբառը։",
+  },
+  "web.login.resetYes": { en: "Reset password", ru: "Сбросить пароль", am: "Վերականգնել գաղտնաբառը" },
+  "web.login.resetNo": { en: "Try again", ru: "Попробовать ещё", am: "Կրկին փորձել" },
   "web.menu": { en: "Menu", ru: "Меню", am: "Մենյու" },
   "web.close": { en: "Close", ru: "Закрыть", am: "Փակել" },
 
   "web.telegram.title": { en: "Telegram", ru: "Telegram", am: "Telegram" },
-  "web.telegram.open": { en: "Telegram access", ru: "Доступ через Telegram", am: "Մուտք Telegram-ով" },
-  "web.telegram.notGranted": {
-    en: "Telegram access has not been given to this account. Ask your Cyber Place administrator.",
-    ru: "Этому аккаунту не выдан доступ через Telegram. Обратитесь к администратору Cyber Place.",
-    am: "Այս հաշվին Telegram-ով մուտք չի տրամադրվել։ Դիմեք Cyber Place-ի ադմինիստրատորին։",
+  "web.telegram.failed": {
+    en: "Telegram could not be opened. Try again.",
+    ru: "Не удалось открыть Telegram. Попробуйте ещё раз.",
+    am: "Չհաջողվեց բացել Telegram-ը։ Կրկին փորձեք։",
   },
-  "web.telegram.disabled": {
-    en: "Telegram is not set up on this server yet.",
-    ru: "Telegram на этом сервере ещё не настроен.",
-    am: "Telegram-ը այս սերվերում դեռ կարգավորված չէ։",
+  "web.telegram.hint": {
+    en: "Work from the bot",
+    ru: "Работа через бота",
+    am: "Աշխատանք բոտով",
   },
-  "web.telegram.none": {
-    en: "No Telegram account is linked. Create a link, open it on the phone with your Telegram, then confirm here.",
-    ru: "Telegram не привязан. Создайте ссылку, откройте её на телефоне со своим Telegram и подтвердите здесь.",
-    am: "Telegram կապված չէ։ Ստեղծեք հղում, բացեք այն ձեր Telegram-ով հեռախոսում, ապա հաստատեք այստեղ։",
-  },
-  "web.telegram.create": { en: "Create link", ru: "Создать ссылку", am: "Ստեղծել հղում" },
-  "web.telegram.linkHint": {
-    en: "Open this link in Telegram or scan the code. It works once, for {0} minutes.",
-    ru: "Откройте ссылку в Telegram или отсканируйте код. Она работает один раз, {0} мин.",
-    am: "Բացեք հղումը Telegram-ում կամ սկանավորեք կոդը։ Այն գործում է մեկ անգամ՝ {0} րոպե։",
-  },
-  "web.telegram.copy": { en: "Copy link", ru: "Скопировать ссылку", am: "Պատճենել հղումը" },
-  "web.telegram.copied": { en: "Link copied", ru: "Ссылка скопирована", am: "Հղումը պատճենվեց" },
-  "web.telegram.pending": {
-    en: "Telegram {0} wants to connect to your account. Confirm only if it is yours.",
-    ru: "Telegram {0} хочет подключиться к вашему аккаунту. Подтвердите, только если это ваш.",
-    am: "Telegram {0}-ը ցանկանում է միանալ ձեր հաշվին։ Հաստատեք միայն եթե այն ձերն է։",
-  },
-  "web.telegram.password": {
-    en: "Your password, to confirm",
-    ru: "Ваш пароль для подтверждения",
-    am: "Ձեր գաղտնաբառը՝ հաստատելու համար",
-  },
-  "web.telegram.confirm": { en: "Confirm", ru: "Подтвердить", am: "Հաստատել" },
-  "web.telegram.reject": { en: "Not mine", ru: "Это не мой", am: "Իմը չէ" },
-  "web.telegram.active": {
-    en: "Telegram {0} is linked. Open the bot to work from Telegram.",
-    ru: "Telegram {0} привязан. Откройте бота, чтобы работать из Telegram.",
-    am: "Telegram {0}-ը կապված է։ Բացեք բոտը՝ Telegram-ից աշխատելու համար։",
-  },
-  "web.telegram.unlink": { en: "Unlink Telegram", ru: "Отвязать Telegram", am: "Անջատել Telegram-ը" },
-  "web.telegram.unlinkConfirm": {
-    en: "Unlink this Telegram account? It will be signed out at once.",
-    ru: "Отвязать этот Telegram? Он сразу потеряет доступ.",
-    am: "Անջատե՞լ այս Telegram-ը։ Այն անմիջապես կկորցնի մուտքը։",
-  },
-  "web.telegram.noUsername": { en: "(no username)", ru: "(без имени пользователя)", am: "(առանց օգտանվան)" },
 
   "web.tg.signingIn": { en: "Signing in with Telegram…", ru: "Вход через Telegram…", am: "Մուտք Telegram-ով…" },
   "web.tg.linking": { en: "Linking your Telegram…", ru: "Привязываем Telegram…", am: "Կապում ենք Telegram-ը…" },
-  "web.tg.linkPending": {
-    en: "Almost done. Open the web panel and confirm this Telegram account, then open the bot again.",
-    ru: "Почти готово. Откройте веб-панель, подтвердите этот Telegram и снова откройте бота.",
-    am: "Գրեթե պատրաստ է։ Բացեք վեբ տարբերակը, հաստատեք այս Telegram-ը և նորից բացեք բոտը։",
+  // The server's refusals of a web sign-in, said by their `code` so the
+  // sentence follows a language switch (2026-10-07). Same wording as the
+  // backend's `response.client-access.*`.
+  "web.refusal.client_access_role_not_allowed": {
+    en: "This way of signing in is for club owners only.",
+    ru: "Этот способ входа доступен только владельцам клубов.",
+    am: "Մուտքի այս եղանակը միայն ակումբների սեփականատերերի համար է։",
+  },
+  "web.refusal.client_access_owners_only": {
+    en: "Web and Telegram access is available to company owners only.",
+    ru: "Доступ через браузер и Telegram есть только у владельцев компаний.",
+    am: "Բրաուզերով և Telegram-ով մուտքը հասանելի է միայն ընկերությունների սեփականատերերին։",
   },
   "web.tg.reopen": {
     en: "Your Telegram session has ended. Close the app and open it again from the bot.",
     ru: "Сеанс в Telegram завершён. Закройте приложение и снова откройте его из бота.",
     am: "Telegram-ի աշխատաշրջանն ավարտվել է։ Փակեք հավելվածը և նորից բացեք այն բոտից։",
   },
-  "web.tg.retry": { en: "Try again", ru: "Попробовать снова", am: "Կրկին փորձել" },
 } as const satisfies Record<string, Record<Lang, string>>;
 
 export type WebTextKey = keyof typeof WEB_TEXT;
 
 export const webText = (key: WebTextKey, lang: Lang, ...args: Array<string | number>): string =>
   args.reduce<string>((text, arg, i) => text.split(`{${i}}`).join(String(arg)), WEB_TEXT[key][lang] ?? WEB_TEXT[key].en);
+
+export const isWebTextKey = (key: string): key is WebTextKey => Object.prototype.hasOwnProperty.call(WEB_TEXT, key);
+
+/** Our key for a refusal `code` the server sends this app, or null for a code we have no words for. */
+export const webRefusalKeyFor = (code: string | null): WebTextKey | null => {
+  const key = `web.refusal.${code}`;
+  return code && isWebTextKey(key) ? key : null;
+};
 
 /** `tw("web.signIn.title")` in the viewer's current language. */
 export const useWebText = () => {

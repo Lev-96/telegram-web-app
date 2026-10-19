@@ -7,8 +7,12 @@
  * the owner is told the same things whichever window they work in.
  *
  * What differs is the frame: below 900px the sidebar becomes a drawer behind a
- * top bar, so the same screens fit a phone and Telegram's narrow view. In a
- * browser the top bar also opens the owner's Telegram access.
+ * top bar (logo on the left, menu button on the right; the drawer opens from
+ * the right, under the thumb), so the same screens fit a phone and
+ * Telegram's narrow view. In a browser an owner's menu also carries a
+ * "Telegram" card (Sidebar's footer slot): one tap opens the Mini App in
+ * Telegram, signed in. A manager never has Telegram, and inside Telegram it
+ * would be circular.
  */
 import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderNotifier";
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
@@ -17,8 +21,9 @@ import SupportNotifier from "@/components/notifications/SupportNotifier";
 import UnexpectedWakeDialog from "@/components/ps5/UnexpectedWakeDialog";
 import Sidebar from "@/components/Sidebar";
 import BackButton from "@/components/ui/BackButton";
+import { useAuth } from "@/auth/AuthContext";
 import { Ps5ControlProvider } from "@/ps5/Ps5ControlProvider";
-import TelegramAccess from "@web/web/TelegramAccess";
+import TelegramMenuEntry from "@web/web/TelegramMenuEntry";
 import { useWebText } from "@web/web/i18n";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
@@ -27,9 +32,9 @@ const inTelegram = () => document.documentElement.dataset.shell === "telegram";
 
 const Layout = () => {
   const tw = useWebText();
+  const { user } = useAuth();
   const location = useLocation();
   const [drawer, setDrawer] = useState(false);
-  const [telegram, setTelegram] = useState(false);
 
   // A menu item was chosen: the drawer has done its job.
   useEffect(() => setDrawer(false), [location.pathname]);
@@ -41,10 +46,14 @@ const Layout = () => {
     return () => window.removeEventListener("keydown", onKey);
   }, [drawer]);
 
+  // Telegram access is an owner's (the server grants it to no other role).
+  const offersTelegram = !inTelegram() && user?.role === "company_owner";
+
   return (
     <Ps5ControlProvider>
       <div className={`app-shell web-shell${drawer ? " is-drawer-open" : ""}`}>
         <header className="web-topbar">
+          <img className="web-topbar__logo" src="./logo.png" alt="Cyber Place" />
           <button
             type="button"
             className="web-topbar__menu"
@@ -56,28 +65,28 @@ const Layout = () => {
             <span aria-hidden="true" />
             <span aria-hidden="true" />
           </button>
-          <img className="web-topbar__logo" src="./logo.png" alt="Cyber Place" />
-          {!inTelegram() && (
-            <button type="button" className="web-topbar__action" onClick={() => setTelegram(true)}>
-              {tw("web.telegram.title")}
-            </button>
-          )}
         </header>
         <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />
         <div className="web-drawer">
-          <Sidebar />
+          <Sidebar footerExtra={offersTelegram ? <TelegramMenuEntry onNavigate={() => setDrawer(false)} /> : undefined} />
         </div>
         <main className="main">
           <BackButton />
           <Outlet />
         </main>
-        <GlobalBookingNotifier />
-        <SupportNotifier />
-        <SessionEndingNotifier />
+        {/* The notifiers' toasts place themselves (fixed, top-right, each at
+            its own offset). On the web they sit in one stack instead, so they
+            cover neither the top bar nor, on a phone, the page title: see
+            .web-notices in web.css. Their dialogs portal to <body> and are
+            not affected. */}
+        <div className="web-notices">
+          <GlobalBookingNotifier />
+          <SupportNotifier />
+          <SessionEndingNotifier />
+          <ExpenseReminderNotifier />
+        </div>
         <UnexpectedWakeDialog />
-        <ExpenseReminderNotifier />
       </div>
-      {!inTelegram() && <TelegramAccess open={telegram} onClose={() => setTelegram(false)} />}
     </Ps5ControlProvider>
   );
 };

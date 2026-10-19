@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#020514" />
     <!--
@@ -13,7 +13,11 @@
       a header.
     -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="icon" href="./logo.png" />
+    <!-- Square icons for the tab and the home screen. Vite bundles them into
+         /assets/ (inlined when tiny), which the Caddyfile already serves. The
+         wide logo.png was squeezed into a square by browsers. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/src/web/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/src/web/icons/apple-touch-icon.png" />
     <title>Cyber Place</title>
   </head>
   <body>

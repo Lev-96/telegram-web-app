@@ -29,7 +29,7 @@ describe("web text", () => {
     for (const [key, dict] of entries) expect(dict.am.includes("վահանակ") || dict.am.includes("Վահանակ"), key).toBe(false);
   });
 
-  it("fills placeholders", () => {
-    expect(webText("web.telegram.linkHint", "ru", 10)).toContain("10 мин");
+  it("returns a text as is when it has no placeholder", () => {
+    expect(webText("web.telegram.title", "ru", 10)).toBe("Telegram");
   });
 });
