@@ -30,6 +30,9 @@ vi.mock("@/components/notifications/SessionEndingNotifier", () => ({ default: ()
 vi.mock("@/components/notifications/SupportNotifier", () => ({ default: () => null }));
 vi.mock("@/components/ps5/UnexpectedWakeDialog", () => ({ default: () => null }));
 vi.mock("@/components/ui/BackButton", () => ({ default: () => null }));
+vi.mock("@/components/ui/PageTopBar", () => ({ default: () => <div data-testid="page-topbar" /> }));
+vi.mock("@/components/appearance/UnsavedInterfaceNotice", () => ({ default: () => <div data-testid="unsaved-interface" /> }));
+vi.mock("@/components/appearance/NewInterfacesOffer", () => ({ default: () => <div data-testid="new-interfaces" /> }));
 vi.mock("@/ps5/Ps5ControlProvider", () => ({ Ps5ControlProvider: ({ children }: { children: ReactNode }) => <>{children}</> }));
 vi.mock("@/api/client", () => ({
   request: async (path: string) => {
@@ -97,3 +100,14 @@ describe("web shell frame", () => {
     expect(handoff.calls).toEqual([]);
   });
 });
+
+describe("what the desktop shell mounts above every screen (panel 2026-10-26/27)", () => {
+  it("the top bar, then the unsaved-interface notice and the new-interfaces offer, before the screen", () => {
+    document.documentElement.dataset.shell = "web";
+    const { container } = mount();
+    const main = container.querySelector("main.main")!;
+    const ids = Array.from(main.children).map((el) => el.getAttribute("data-testid"));
+    expect(ids.slice(0, 3)).toEqual(["page-topbar", "unsaved-interface", "new-interfaces"]);
+  });
+});
+
