@@ -2,7 +2,8 @@
  * The panel's `@/components/Layout` for a browser and for Telegram.
  *
  * Everything the desktop shell mounts is mounted here too, from the panel's own
- * modules — the sidebar and its role-aware menu, the back button, the booking /
+ * modules — the sidebar and its role-aware menu, the top bar with the back
+ * button, the interface notices, the booking /
  * support / session-ending notifiers, the unexpected-console-wake question — so
  * the owner is told the same things whichever window they work in.
  *
@@ -18,9 +19,11 @@ import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderN
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
 import SessionEndingNotifier from "@/components/notifications/SessionEndingNotifier";
 import SupportNotifier from "@/components/notifications/SupportNotifier";
+import NewInterfacesOffer from "@/components/appearance/NewInterfacesOffer";
+import UnsavedInterfaceNotice from "@/components/appearance/UnsavedInterfaceNotice";
 import UnexpectedWakeDialog from "@/components/ps5/UnexpectedWakeDialog";
 import Sidebar from "@/components/Sidebar";
-import BackButton from "@/components/ui/BackButton";
+import PageTopBar from "@/components/ui/PageTopBar";
 import { useAuth } from "@/auth/AuthContext";
 import { Ps5ControlProvider } from "@/ps5/Ps5ControlProvider";
 import TelegramMenuEntry from "@web/web/TelegramMenuEntry";
@@ -71,7 +74,15 @@ const Layout = () => {
           <Sidebar footerExtra={offersTelegram ? <TelegramMenuEntry onNavigate={() => setDrawer(false)} /> : undefined} />
         </div>
         <main className="main">
-          <BackButton />
+          {/* What the desktop shell mounts above every screen (panel
+              2026-10-26/27): the pinned top bar with the back button and the
+              screen's heading once it scrolls away, the unsaved-interface
+              notice and the new-interfaces offer. The bar's side-menu toggle
+              draws nothing here: it needs the desktop's AppShell, and the web
+              has its own drawer. */}
+          <PageTopBar />
+          <UnsavedInterfaceNotice />
+          <NewInterfacesOffer />
           <Outlet />
         </main>
         {/* The notifiers' toasts place themselves (fixed, top-right, each at
