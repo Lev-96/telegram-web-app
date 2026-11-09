@@ -97,15 +97,11 @@ const drop = async (sub: PushSubscription): Promise<void> => {
 };
 
 /**
- * «Turn on phone notifications», run inside the tap: the permission question
- * must be the first thing the tap does (Safari asks only from a user gesture).
- * Then the worker, the subscription, and the server. A subscription the server
- * did not take is dropped again, so the phone never believes it is on alone.
+ * Worker → a subscription made with this key → the server. A subscription the
+ * server did not take is dropped again, so the phone never believes it is on
+ * alone. Needs the permission already granted.
  */
-export const enablePush = async (publicKey: string): Promise<NotificationPermission> => {
-  const permission = await Notification.requestPermission();
-  if (permission !== "granted") return permission;
-
+const subscribeAndSave = async (publicKey: string): Promise<void> => {
   await registerWorker();
   const reg = await navigator.serviceWorker.ready;
   let sub = await reg.pushManager.getSubscription();
@@ -121,6 +117,17 @@ export const enablePush = async (publicKey: string): Promise<NotificationPermiss
     await sub.unsubscribe().catch(() => undefined);
     throw e;
   }
+};
+
+/**
+ * «Turn on phone notifications», run inside the tap: the permission question
+ * must be the first thing the tap does (Safari asks only from a user gesture).
+ * Then the worker, the subscription, and the server.
+ */
+export const enablePush = async (publicKey: string): Promise<NotificationPermission> => {
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") return permission;
+  await subscribeAndSave(publicKey);
   return "granted";
 };
 
@@ -135,24 +142,32 @@ export const disablePush = async (): Promise<void> => {
 /**
  * On load, quietly: a phone that already allowed notifications sends its
  * subscription again (the server may have lost it, or another account was
- * signed in here before). One made with a key the server no longer has is
- * dropped: the person turns it on again with one tap.
+ * signed in here before). Allowed but not subscribed — the subscription was
+ * lost, or one made with a key the server no longer has was just dropped —
+ * subscribes again without a question (2026-11-09): no gesture is needed once
+ * the permission is granted. If that fails, "off": the person turns it on
+ * with one tap.
  */
 export const syncPush = async (publicKey: string): Promise<"on" | "off"> => {
   if (Notification.permission !== "granted") return "off";
   const sub = await currentSubscription();
-  if (!sub) return "off";
-  if (!madeWithKey(sub, publicKey)) {
-    await drop(sub);
+  if (sub && madeWithKey(sub, publicKey)) {
+    await saveOnServer(sub).catch(() => undefined);
+    return "on";
+  }
+  try {
+    if (sub) await drop(sub);
+    await subscribeAndSave(publicKey);
+    return "on";
+  } catch {
     return "off";
   }
-  await saveOnServer(sub).catch(() => undefined);
-  return "on";
 };
 
 /**
  * Signing out: this phone must not keep receiving the account's notices, and
- * the next person to sign in here turns them on for themselves. Best effort
+ * the next sign-in here gets its own subscription (silently, if this phone
+ * already allows notifications: syncPush). Best effort
  * and bounded, so a sign-out never waits on it for long.
  */
 export const forgetPushOnSignOut = async (timeoutMs = 3000): Promise<void> => {

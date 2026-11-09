@@ -4,28 +4,23 @@
  *
  *   Telegram Mini App  no install; says notices come from the bot
  *   browser, Chrome    «Install the app» shows Chrome's own install dialog
- *   browser, iOS       no such dialog exists: the steps (Share → Add to Home
- *                      Screen); iOS web push works only for the installed app
+ *   browser, iOS       no such dialog exists: the four numbered steps
+ *                      (IosInstallSteps); iOS web push works only for the
+ *                      installed app
  *   browser, other     nothing
  *   installed app      the phone-notifications switch (hidden when the server
- *                      has no web push), or why it cannot be on
+ *                      has no web push), or why it cannot be on. Its state is
+ *                      the app's one PhoneNotificationsProvider (Layout), which
+ *                      the first-launch prompt reads too.
  */
-import { useAuth } from "@/auth/AuthContext";
 import NavIcon from "@/components/ui/NavIcon";
-import { notify } from "@/ui/notify";
 import { useWebText, type WebTextKey } from "@web/web/i18n";
 import { useId, useState, type ReactNode } from "react";
+import IosInstallSteps from "./IosInstallSteps";
 import { isIos, isStandalone, isTelegramMiniApp } from "./pwa/environment";
 import { promptInstall, useInstallOffer } from "./pwa/installPrompt";
-import { usePhoneNotifications } from "./pwa/usePhoneNotifications";
-
-/** A phone (Lucide "smartphone"), in the current text colour. */
-const PhoneIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="5" y="2" width="14" height="20" rx="2" />
-    <path d="M12 18h.01" />
-  </svg>
-);
+import { usePhoneNotificationsState } from "./pwa/PhoneNotificationsContext";
+import { PhoneIcon } from "./pwaIcons";
 
 const BellIcon = () => <NavIcon id="nav.notifications" size={18} />;
 
@@ -74,22 +69,15 @@ const IosSteps = () => {
         aria-expanded={open}
         aria-controls={stepsId}
       />
-      {open && (
-        <p id={stepsId} className="web-menu-card__help">
-          {tw("web.app.iosSteps")}
-        </p>
-      )}
+      {open && <IosInstallSteps id={stepsId} />}
     </div>
   );
 };
 
-/** The installed app's switch. */
+/** The installed app's switch, on the app's one shared state. */
 const NotificationsSwitch = () => {
   const tw = useWebText();
-  const { user } = useAuth();
-  const { state, enable, disable } = usePhoneNotifications(user?.id ?? null, (action) =>
-    notify.message("error", tw(action === "enable" ? "web.app.enableFailed" : "web.app.disableFailed")),
-  );
+  const { state, enable, disable } = usePhoneNotificationsState();
   const title = tw("web.app.notifications");
   const info = (hint: WebTextKey) => <InfoCard icon={<BellIcon />} title={title} hint={tw(hint)} />;
 
@@ -101,7 +89,7 @@ const NotificationsSwitch = () => {
     case "blocked":
       return info("web.app.blocked");
     case "off":
-      return <ActionCard icon={<BellIcon />} title={tw("web.app.enable")} hint={tw("web.app.enableHint")} onClick={enable} busy={state.busy} />;
+      return <ActionCard icon={<BellIcon />} title={tw("web.app.enable")} hint={tw("web.app.enableHint")} onClick={() => void enable()} busy={state.busy} />;
     case "on":
       return (
         <InfoCard icon={<BellIcon />} title={title} hint={tw("web.app.on")}>

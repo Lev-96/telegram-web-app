@@ -78,11 +78,33 @@ export const WEB_TEXT = {
   "web.app.install": { en: "Install the app", ru: "Установить приложение", am: "Տեղադրել հավելվածը" },
   "web.app.installHint": { en: "On your phone's home screen", ru: "На главный экран телефона", am: "Հեռախոսի գլխավոր էկրանին" },
   "web.app.iosHint": { en: "iPhone: from the Share menu", ru: "iPhone: через меню «Поделиться»", am: "iPhone՝ «Share» ցանկից" },
-  // iOS has no Armenian interface: the Armenian text names Safari's English labels.
-  "web.app.iosSteps": {
-    en: "In Safari, tap Share, then «Add to Home Screen». Open Cyber Place from the home screen: phone notifications work only there (iOS 16.4 or newer).",
-    ru: "В Safari нажмите «Поделиться», затем «На экран „Домой“». Открывайте Cyber Place с экрана «Домой»: уведомления на телефоне работают только там (iOS 16.4 или новее).",
-    am: "Safari-ում սեղմեք «Share», ապա «Add to Home Screen»։ Բացեք Cyber Place-ը հիմնական էկրանից՝ հեռախոսի ծանուցումներն աշխատում են միայն այնտեղ (iOS 16.4 կամ ավելի նոր)։",
+  // iOS has no Armenian interface: the Armenian text names Safari's English
+  // labels. Step 4 takes the prompt's button text ({0}).
+  "web.app.iosTitle": { en: "Install on iPhone", ru: "Установка на iPhone", am: "Տեղադրում iPhone-ում" },
+  "web.app.iosStep1": {
+    en: "In Safari, tap Share (a square with an up arrow). On newer iOS, tap «⋯» first.",
+    ru: "В Safari нажмите «Поделиться» (квадрат со стрелкой вверх). В новых iOS сначала нажмите «⋯».",
+    am: "Safari-ում սեղմեք «Share» (քառակուսի՝ վերև սլաքով)։ iOS-ի նոր տարբերակներում նախ սեղմեք «⋯»։",
+  },
+  "web.app.iosStep2": {
+    en: "Scroll down and choose «Add to Home Screen». Not there? Tap «View More».",
+    ru: "Прокрутите вниз и выберите «На экран „Домой“». Если его нет, нажмите «Ещё».",
+    am: "Թերթեք ներքև և ընտրեք «Add to Home Screen»։ Չկա՞, սեղմեք «View More»։",
+  },
+  "web.app.iosStep3": {
+    en: "Tap «Add», then open Cyber Place from the Home Screen and sign in.",
+    ru: "Нажмите «Добавить», затем откройте Cyber Place с экрана «Домой» и войдите.",
+    am: "Սեղմեք «Add», ապա բացեք Cyber Place-ը հիմնական էկրանից և մուտք գործեք։",
+  },
+  "web.app.iosStep4": {
+    en: "Tap «{0}». Notices then arrive even when the phone is locked.",
+    ru: "Нажмите «{0}». Уведомления будут приходить, даже когда телефон заблокирован.",
+    am: "Սեղմեք «{0}»։ Ծանուցումները կգան նույնիսկ, երբ հեռախոսը կողպված է։",
+  },
+  "web.app.iosNote": {
+    en: "Safari, or another browser on iOS 16.4+. Not inside the Telegram app.",
+    ru: "В Safari или другом браузере на iOS 16.4+. Не внутри приложения Telegram.",
+    am: "Safari-ում կամ այլ բրաուզերում՝ iOS 16.4+։ Ոչ Telegram հավելվածի ներսում։",
   },
   "web.app.notifications": { en: "Phone notifications", ru: "Уведомления на телефоне", am: "Ծանուցումներ հեռախոսում" },
   "web.app.enable": { en: "Turn on phone notifications", ru: "Включить уведомления на телефоне", am: "Միացնել ծանուցումները հեռախոսում" },
@@ -106,6 +128,37 @@ export const WEB_TEXT = {
     ru: "Не удалось выключить уведомления. Попробуйте ещё раз.",
     am: "Չհաջողվեց անջատել ծանուցումները։ Կրկին փորձեք։",
   },
+
+  // The first-launch prompt of the installed app (2026-11-09).
+  "web.push.title": { en: "Turn on notifications", ru: "Включите уведомления", am: "Միացրեք ծանուցումները" },
+  "web.push.body": {
+    en: "Payments and blocks arrive here, even on the lock screen.",
+    ru: "Оплаты и блокировки придут сюда, даже на экран блокировки.",
+    am: "Վճարումներն ու արգելափակումները կգան այստեղ, նույնիսկ կողպված էկրանին։",
+  },
+  "web.push.allow": { en: "Allow notifications", ru: "Разрешить уведомления", am: "Թույլատրել ծանուցումները" },
+  "web.push.later": { en: "Later", ru: "Позже", am: "Ավելի ուշ" },
+  "web.push.enabled": { en: "Notifications are on", ru: "Уведомления включены", am: "Ծանուցումները միացված են" },
+  "web.push.deniedTitle": { en: "Notifications are blocked", ru: "Уведомления запрещены", am: "Ծանուցումներն արգելված են" },
+  // iOS's own labels: «Допуск уведомлений» in Russian; English in Armenian (no Armenian iOS).
+  "web.push.deniedIos": {
+    en: "To allow them, open Settings → Notifications → Cyber Place → Allow Notifications.",
+    ru: "Чтобы разрешить, откройте Настройки → Уведомления → Cyber Place → Допуск уведомлений.",
+    am: "Թույլատրելու համար բացեք Settings → Notifications → Cyber Place → Allow Notifications։",
+  },
+  // The install banner in a browser tab (2026-11-09).
+  "web.banner.ios": {
+    en: "Install Cyber Place on your iPhone to get notifications",
+    ru: "Установите Cyber Place на iPhone, чтобы получать уведомления",
+    am: "Տեղադրեք Cyber Place-ը iPhone-ում՝ ծանուցումներ ստանալու համար",
+  },
+  "web.banner.browser": {
+    en: "Install the app to get notifications on your phone",
+    ru: "Установите приложение, чтобы получать уведомления на телефон",
+    am: "Տեղադրեք հավելվածը՝ հեռախոսում ծանուցումներ ստանալու համար",
+  },
+  "web.banner.how": { en: "How to install", ru: "Как установить", am: "Ինչպես տեղադրել" },
+  "web.banner.install": { en: "Install", ru: "Установить", am: "Տեղադրել" },
 
   "web.tg.signingIn": { en: "Signing in with Telegram…", ru: "Вход через Telegram…", am: "Մուտք Telegram-ով…" },
   "web.tg.linking": { en: "Linking your Telegram…", ru: "Привязываем Telegram…", am: "Կապում ենք Telegram-ը…" },

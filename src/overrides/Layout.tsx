@@ -15,6 +15,13 @@
  * Telegram, signed in. A manager never has Telegram, and inside Telegram it
  * would be circular. Below it, the installable app's card (PhoneAppMenuEntry):
  * install, or in the installed app the phone-notifications switch.
+ *
+ * Phone notifications (2026-11-09) run ONCE here, around the shell and outside
+ * the Sidebar (PhoneNotificationsProvider), so they work while the drawer is
+ * closed. On top of the screen: the installed app's first-launch «Включите
+ * уведомления» sheet, and in a phone's browser tab the install banner (the
+ * menu is off-canvas there). Both are keyed by the account: a different
+ * sign-in starts them afresh.
  */
 import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderNotifier";
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
@@ -28,7 +35,10 @@ import Sidebar from "@/components/Sidebar";
 import PageTopBar from "@/components/ui/PageTopBar";
 import { useAuth } from "@/auth/AuthContext";
 import { Ps5ControlProvider } from "@/ps5/Ps5ControlProvider";
+import InstallBanner from "@web/web/InstallBanner";
 import PhoneAppMenuEntry from "@web/web/PhoneAppMenuEntry";
+import PhoneNotificationsPrompt from "@web/web/PhoneNotificationsPrompt";
+import { PhoneNotificationsProvider } from "@web/web/pwa/PhoneNotificationsContext";
 import TelegramMenuEntry from "@web/web/TelegramMenuEntry";
 import { useWebText } from "@web/web/i18n";
 import { useEffect, useState } from "react";
@@ -57,60 +67,64 @@ const Layout = () => {
 
   return (
     <Ps5ControlProvider>
-      <div className={`app-shell web-shell${drawer ? " is-drawer-open" : ""}`}>
-        <header className="web-topbar">
-          <img className="web-topbar__logo" src="./logo.png" alt="Cyber Place" />
-          <button
-            type="button"
-            className="web-topbar__menu"
-            aria-label={tw("web.menu")}
-            aria-expanded={drawer}
-            onClick={() => setDrawer((v) => !v)}
-          >
-            <span aria-hidden="true" />
-            <span aria-hidden="true" />
-            <span aria-hidden="true" />
-          </button>
-        </header>
-        <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />
-        <div className="web-drawer">
-          <Sidebar
-            footerExtra={
-              <>
-                {offersTelegram && <TelegramMenuEntry onNavigate={() => setDrawer(false)} />}
-                {/* Install the app / phone notifications (2026-11-09); in Telegram, a note that notices come from the bot. */}
-                <PhoneAppMenuEntry />
-              </>
-            }
-          />
+      <PhoneNotificationsProvider>
+        <div className={`app-shell web-shell${drawer ? " is-drawer-open" : ""}`}>
+          <header className="web-topbar">
+            <img className="web-topbar__logo" src="./logo.png" alt="Cyber Place" />
+            <button
+              type="button"
+              className="web-topbar__menu"
+              aria-label={tw("web.menu")}
+              aria-expanded={drawer}
+              onClick={() => setDrawer((v) => !v)}
+            >
+              <span aria-hidden="true" />
+              <span aria-hidden="true" />
+              <span aria-hidden="true" />
+            </button>
+          </header>
+          <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />
+          <div className="web-drawer">
+            <Sidebar
+              footerExtra={
+                <>
+                  {offersTelegram && <TelegramMenuEntry onNavigate={() => setDrawer(false)} />}
+                  {/* Install the app / phone notifications (2026-11-09); in Telegram, a note that notices come from the bot. */}
+                  <PhoneAppMenuEntry />
+                </>
+              }
+            />
+          </div>
+          <main className="main">
+            {/* What the desktop shell mounts above every screen (panel
+                2026-10-26/27): the pinned top bar with the back button and the
+                screen's heading once it scrolls away, the unsaved-interface
+                notice and the new-interfaces offer. The bar's side-menu toggle
+                draws nothing here: it needs the desktop's AppShell, and the web
+                has its own drawer. */}
+            <PageTopBar />
+            <UnsavedInterfaceNotice />
+            <NewInterfacesOffer />
+            <Outlet />
+          </main>
+          {/* The notifiers' toasts place themselves (fixed, top-right, each at
+              its own offset). On the web they sit in one stack instead, so they
+              cover neither the top bar nor, on a phone, the page title: see
+              .web-notices in web.css. Their dialogs portal to <body> and are
+              not affected. */}
+          <div className="web-notices">
+            <GlobalBookingNotifier />
+            <SupportNotifier />
+            <SessionEndingNotifier />
+            {/* Mirrors the desktop Layout (2026-11-09): a platform payment notice rings. */}
+            <BillingNoticeNotifier />
+            <ExpenseReminderNotifier />
+          </div>
+          <UnexpectedWakeDialog />
+          <InstallBanner key={`banner-${user?.id ?? "none"}`} />
+          <PhoneNotificationsPrompt key={`push-${user?.id ?? "none"}`} />
         </div>
-        <main className="main">
-          {/* What the desktop shell mounts above every screen (panel
-              2026-10-26/27): the pinned top bar with the back button and the
-              screen's heading once it scrolls away, the unsaved-interface
-              notice and the new-interfaces offer. The bar's side-menu toggle
-              draws nothing here: it needs the desktop's AppShell, and the web
-              has its own drawer. */}
-          <PageTopBar />
-          <UnsavedInterfaceNotice />
-          <NewInterfacesOffer />
-          <Outlet />
-        </main>
-        {/* The notifiers' toasts place themselves (fixed, top-right, each at
-            its own offset). On the web they sit in one stack instead, so they
-            cover neither the top bar nor, on a phone, the page title: see
-            .web-notices in web.css. Their dialogs portal to <body> and are
-            not affected. */}
-        <div className="web-notices">
-          <GlobalBookingNotifier />
-          <SupportNotifier />
-          <SessionEndingNotifier />
-          {/* Mirrors the desktop Layout (2026-11-09): a platform payment notice rings. */}
-          <BillingNoticeNotifier />
-          <ExpenseReminderNotifier />
-        </div>
-        <UnexpectedWakeDialog />
-      </div>
+      </PhoneNotificationsProvider>
     </Ps5ControlProvider>
   );
 };

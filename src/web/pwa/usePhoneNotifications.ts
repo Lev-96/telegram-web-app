@@ -7,8 +7,13 @@
  * off / on     the switch, with `busy` while a tap is being carried out
  *
  * On load, a phone that already allowed notifications re-sends its
- * subscription quietly (syncPush). Again when the signed-in account changes,
- * so the server files the phone under whoever uses it now.
+ * subscription quietly, or subscribes again when it has none (syncPush).
+ * Again when the signed-in account changes, so the server files the phone
+ * under whoever uses it now.
+ *
+ * ONE instance per app (2026-11-09): PhoneNotificationsProvider runs it in the
+ * Layout, outside the menu, and the menu card and the first-launch prompt both
+ * read it from there. Never call it from a component of its own.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { pushSupported } from "./environment";
@@ -22,7 +27,10 @@ export type PhoneNotifications =
 
 const HIDDEN: PhoneNotifications = { kind: "hidden" };
 
-/** Mounted only in the installed app, outside Telegram: the one place this switch exists. */
+/** How a tap on «turn on» ended: the permission's answer, or "failed" (the hook has already said so). */
+export type EnableOutcome = NotificationPermission | "failed";
+
+/** Run ONLY by PhoneNotificationsProvider (installed app, outside Telegram). */
 export const usePhoneNotifications = (
   userId: number | null,
   onError: (action: "enable" | "disable") => void,
@@ -65,16 +73,23 @@ export const usePhoneNotifications = (
     };
   }, [userId]);
 
-  /** Must be called straight from the tap: the permission question needs the gesture. */
-  const enable = useCallback(() => {
+  /**
+   * Must be called straight from the tap: the permission question needs the
+   * gesture, and it is the first thing enablePush awaits.
+   */
+  const enable = useCallback((): Promise<EnableOutcome> => {
     const publicKey = key.current;
-    if (!publicKey) return;
+    if (!publicKey) return Promise.resolve("failed");
     setState({ kind: "off", busy: true });
-    enablePush(publicKey).then(
-      (permission) => setState(permission === "granted" ? { kind: "on", busy: false } : permission === "denied" ? { kind: "blocked" } : { kind: "off", busy: false }),
+    return enablePush(publicKey).then(
+      (permission) => {
+        setState(permission === "granted" ? { kind: "on", busy: false } : permission === "denied" ? { kind: "blocked" } : { kind: "off", busy: false });
+        return permission;
+      },
       () => {
         setState({ kind: "off", busy: false });
         reportError.current("enable");
+        return "failed" as const;
       },
     );
   }, []);
