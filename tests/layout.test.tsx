@@ -27,6 +27,7 @@ vi.mock("@/components/Sidebar", () => ({
 vi.mock("@/components/notifications/ExpenseReminderNotifier", () => ({ default: () => null }));
 vi.mock("@/components/notifications/GlobalBookingNotifier", () => ({ default: () => null }));
 vi.mock("@/components/notifications/SessionEndingNotifier", () => ({ default: () => null }));
+vi.mock("@/components/notifications/BillingNoticeNotifier", () => ({ default: () => null }));
 vi.mock("@/components/notifications/SupportNotifier", () => ({ default: () => null }));
 vi.mock("@/components/ps5/UnexpectedWakeDialog", () => ({ default: () => null }));
 vi.mock("@/components/ui/BackButton", () => ({ default: () => null }));
