@@ -26,3 +26,10 @@ export const isIos = (): boolean => {
 /** The browser can receive web push at all (service worker + Push API + notifications). */
 export const pushSupported = (): boolean =>
   "serviceWorker" in navigator && typeof window.PushManager !== "undefined" && typeof window.Notification !== "undefined";
+
+/**
+ * The installed app outside Telegram (2026-11-09): where the phone shell (top
+ * bar actions, bottom navigation) and the phone notifications run. A browser
+ * tab and the Telegram Mini App keep the plain frame.
+ */
+export const isInstalledApp = (): boolean => isStandalone() && !isTelegramMiniApp();

@@ -61,6 +61,10 @@ export const WEB_TEXT = {
   "web.login.resetNo": { en: "Try again", ru: "Попробовать ещё", am: "Կրկին փորձել" },
   "web.menu": { en: "Menu", ru: "Меню", am: "Մենյու" },
   "web.close": { en: "Close", ru: "Закрыть", am: "Փակել" },
+  // The installed app's phone shell (2026-11-09): the bottom bar and its sheet.
+  "web.shell.sections": { en: "Sections", ru: "Разделы", am: "Բաժիններ" },
+  "web.shell.more": { en: "More", ru: "Ещё", am: "Ավելին" },
+  "web.shell.unread": { en: "{0} unread", ru: "{0} непрочитанных", am: "{0} չկարդացված" },
 
   "web.telegram.title": { en: "Telegram", ru: "Telegram", am: "Telegram" },
   "web.telegram.failed": {

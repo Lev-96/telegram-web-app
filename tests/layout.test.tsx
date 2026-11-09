@@ -37,6 +37,10 @@ vi.mock("@/components/appearance/NewInterfacesOffer", () => ({ default: () => <d
 vi.mock("@web/web/PhoneAppMenuEntry", () => ({ default: () => <div data-testid="phone-app" /> }));
 vi.mock("@web/web/PhoneNotificationsPrompt", () => ({ default: () => <div data-testid="push-prompt" /> }));
 vi.mock("@web/web/InstallBanner", () => ({ default: () => <div data-testid="install-banner" /> }));
+vi.mock("@web/web/appShell/AppTopActions", () => ({ default: () => <div className="web-topbar__actions" data-testid="top-actions" /> }));
+vi.mock("@web/web/appShell/AppTabBar", () => ({
+  default: ({ footerExtra }: { footerExtra?: ReactNode }) => <nav className="web-tabbar">{footerExtra}</nav>,
+}));
 vi.mock("@web/web/pwa/PhoneNotificationsContext", () => ({
   PhoneNotificationsProvider: ({ children }: { children: ReactNode }) => <div data-testid="push-provider">{children}</div>,
 }));
@@ -57,8 +61,14 @@ const mount = () =>
     </MemoryRouter>,
   );
 
+const asInstalled = (installed: boolean) => {
+  window.matchMedia = ((q: string) => ({ matches: installed && q === "(display-mode: standalone)" })) as unknown as typeof window.matchMedia;
+};
+
 afterEach(() => {
   cleanup();
+  asInstalled(false);
+  delete window.Telegram;
   document.documentElement.dataset.shell = "";
   handoff.calls = [];
 });
@@ -145,3 +155,43 @@ describe("what the desktop shell mounts above every screen (panel 2026-10-26/27)
   });
 });
 
+
+describe("the installed app's phone shell (2026-11-09)", () => {
+  it("installed, outside Telegram: bell and avatar between the logo and the menu button, and the bottom bar after the screen", () => {
+    document.documentElement.dataset.shell = "web";
+    auth.role = "company_owner";
+    asInstalled(true);
+    const { container } = mount();
+    const shell = container.querySelector(".web-shell")!;
+    expect(shell.classList.contains("web-shell--app")).toBe(true);
+    const bar = container.querySelector(".web-topbar")!;
+    expect([...bar.children].map((el) => el.className)).toEqual(["web-topbar__logo", "web-topbar__actions", "web-topbar__menu"]);
+    const tabbar = shell.querySelector(":scope > nav.web-tabbar")!;
+    expect(tabbar.previousElementSibling?.tagName).toBe("MAIN");
+    // The More sheet carries the menu's own footer cards, the same ones the drawer has.
+    expect(tabbar.querySelector(".web-telegram-entry")).not.toBeNull();
+    expect(tabbar.querySelector('[data-testid="phone-app"]')).not.toBeNull();
+  });
+
+  it("a browser tab keeps the plain frame", () => {
+    document.documentElement.dataset.shell = "web";
+    asInstalled(false);
+    const { container } = mount();
+    expect(container.querySelector(".web-shell--app")).toBeNull();
+    expect(container.querySelector(".web-tabbar")).toBeNull();
+    expect(container.querySelector(".web-topbar__actions")).toBeNull();
+  });
+
+  it.each([
+    ["the shell mark", () => (document.documentElement.dataset.shell = "telegram")],
+    ["Telegram's launch data", () => (window.Telegram = { WebApp: { initData: "query_id=1" } } as unknown as Window["Telegram"])],
+  ])("Telegram keeps the plain frame even when it reports standalone (%s)", (_name, enterTelegram) => {
+    document.documentElement.dataset.shell = "web";
+    asInstalled(true);
+    enterTelegram();
+    const { container } = mount();
+    expect(container.querySelector(".web-shell--app")).toBeNull();
+    expect(container.querySelector(".web-tabbar")).toBeNull();
+    expect(container.querySelector(".web-topbar__actions")).toBeNull();
+  });
+});

@@ -22,6 +22,12 @@
  * уведомления» sheet, and in a phone's browser tab the install banner (the
  * menu is off-canvas there). Both are keyed by the account: a different
  * sign-in starts them afresh.
+ *
+ * The installed app outside Telegram (2026-11-09) is a phone shell: the top
+ * bar also carries the notifications bell and the person's avatar, and a
+ * bottom bar holds the side menu's entries (AppTabBar, the Sidebar's own
+ * pipeline) with «More» for the rest. A browser tab and Telegram keep the
+ * plain frame. Both bars are below the drawer (30/40) and every dialog (50).
  */
 import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderNotifier";
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
@@ -39,6 +45,9 @@ import InstallBanner from "@web/web/InstallBanner";
 import PhoneAppMenuEntry from "@web/web/PhoneAppMenuEntry";
 import PhoneNotificationsPrompt from "@web/web/PhoneNotificationsPrompt";
 import { PhoneNotificationsProvider } from "@web/web/pwa/PhoneNotificationsContext";
+import { isInstalledApp } from "@web/web/pwa/environment";
+import AppTabBar from "@web/web/appShell/AppTabBar";
+import AppTopActions from "@web/web/appShell/AppTopActions";
 import TelegramMenuEntry from "@web/web/TelegramMenuEntry";
 import { useWebText } from "@web/web/i18n";
 import { useEffect, useState } from "react";
@@ -46,11 +55,14 @@ import { Outlet, useLocation } from "react-router-dom";
 
 const inTelegram = () => document.documentElement.dataset.shell === "telegram";
 
+
 const Layout = () => {
   const tw = useWebText();
   const { user } = useAuth();
   const location = useLocation();
   const [drawer, setDrawer] = useState(false);
+  // Where the page runs does not change while it is open.
+  const [appShell] = useState(isInstalledApp);
 
   // A menu item was chosen: the drawer has done its job.
   useEffect(() => setDrawer(false), [location.pathname]);
@@ -65,12 +77,22 @@ const Layout = () => {
   // Telegram access is an owner's (the server grants it to no other role).
   const offersTelegram = !inTelegram() && user?.role === "company_owner";
 
+  // The menu's footer cards: in the drawer, and in the app's «More» sheet.
+  const menuCards = (
+    <>
+      {offersTelegram && <TelegramMenuEntry onNavigate={() => setDrawer(false)} />}
+      {/* Install the app / phone notifications (2026-11-09); in Telegram, a note that notices come from the bot. */}
+      <PhoneAppMenuEntry />
+    </>
+  );
+
   return (
     <Ps5ControlProvider>
       <PhoneNotificationsProvider>
-        <div className={`app-shell web-shell${drawer ? " is-drawer-open" : ""}`}>
+        <div className={`app-shell web-shell${appShell ? " web-shell--app" : ""}${drawer ? " is-drawer-open" : ""}`}>
           <header className="web-topbar">
             <img className="web-topbar__logo" src="./logo.png" alt="Cyber Place" />
+            {appShell && <AppTopActions />}
             <button
               type="button"
               className="web-topbar__menu"
@@ -85,15 +107,7 @@ const Layout = () => {
           </header>
           <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />
           <div className="web-drawer">
-            <Sidebar
-              footerExtra={
-                <>
-                  {offersTelegram && <TelegramMenuEntry onNavigate={() => setDrawer(false)} />}
-                  {/* Install the app / phone notifications (2026-11-09); in Telegram, a note that notices come from the bot. */}
-                  <PhoneAppMenuEntry />
-                </>
-              }
-            />
+            <Sidebar footerExtra={menuCards} />
           </div>
           <main className="main">
             {/* What the desktop shell mounts above every screen (panel
@@ -107,6 +121,7 @@ const Layout = () => {
             <NewInterfacesOffer />
             <Outlet />
           </main>
+          {appShell && <AppTabBar footerExtra={menuCards} />}
           {/* The notifiers' toasts place themselves (fixed, top-right, each at
               its own offset). On the web they sit in one stack instead, so they
               cover neither the top bar nor, on a phone, the page title: see

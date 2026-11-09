@@ -510,6 +510,20 @@
   }
 }
 
+/* The drawer when closed (2026-11-09). The menu's wordmark breathes with an
+   endless drop-shadow `filter` (panel brandGlow, up to a 28px blur). In the
+   closed drawer, just off the right edge, that glow's filter area reaches back
+   into the screen, and WebKit drew it as a solid black or white block over the
+   top bar's right end, the menu button (6-8 of 36 headless WebKit frames,
+   in a browser tab too; 0 with the glow stopped). Nobody sees the wordmark
+   while the drawer is closed, so it stops there; it breathes again when the
+   drawer opens. */
+@media (max-width: 899px) {
+  .web-shell:not(.is-drawer-open) .web-drawer .sidebar h1 span {
+    animation: none;
+  }
+}
+
 /* ── sign-in and the Telegram gate ────────────────────────────────────── */
 .web-gate {
   min-height: 100vh;
@@ -797,6 +811,16 @@
   pointer-events: auto;
 }
 
+/* The session-ending cards come in their own stack (.ending-soon-stack, the
+   panel's: fixed, top-right, 9000). Left there it covered the phone top bar's
+   menu button, and the installed app's bell and avatar (2026-11-09): it joins
+   this column instead. */
+.web-notices > .ending-soon-stack {
+  position: static;
+  width: 100%;
+  pointer-events: auto;
+}
+
 /* Narrow: at the bottom, above the home indicator, where the thumb is and
    where they cover neither the title nor the page's primary action row. */
 @media (max-width: 899px) {
@@ -1060,4 +1084,314 @@
 .web-login__reset p {
   margin: 0;
   font-size: 15px;
+}
+
+/* ── the billing cover on a phone (2026-11-09) ─────────────────────────────
+   The panel's cover (.billing-lock, inside the screen) bleeds 16px past its
+   box and is a backdrop-filter layer as tall as the whole board. On the
+   desktop nothing sits above the scroll area. Here the top bar sits right
+   above .main and only .main's overflow clip kept the cover off it; iOS WebKit
+   does not hold a backdrop-filter layer of an async-scrolled overflow box to
+   that clip, so once the board scrolled the blur covered the logo and menu
+   button. On the phone frame the cover therefore (1) ends exactly at the
+   screen's edges (its inset = .screen-bg's padding below), (2) has no
+   backdrop-filter, a denser tint instead, and (3) the bars get their own
+   compositing layer, painted above the scroll area whatever happens in it.
+   The page-wide BillingBlockedModal (.billing-lock--screen) is not touched.
+   The PageTopBar band reached 16px above .main the same way: its offset is
+   the panel's --main-pad-top, which the web never applies (.main has no top
+   padding here), so it is zeroed. */
+@media (max-width: 899px) {
+  .web-shell .main {
+    --main-pad-top: 0px;
+  }
+
+  .web-shell .billing-lock:not(.billing-lock--screen) {
+    inset: -16px -12px;
+    background: rgb(var(--bg-rgb) / 0.88);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .web-topbar,
+  .web-tabbar {
+    will-change: transform;
+  }
+}
+
+@media (max-width: 599px) {
+  .web-shell .billing-lock:not(.billing-lock--screen) {
+    inset: -12px -10px;
+  }
+}
+
+/* ── the installed app's phone shell (2026-11-09) ──────────────────────────
+   Only with .web-shell--app (installed, not Telegram) and below 900px; a
+   browser tab, Telegram and the wide layout keep the plain frame.
+
+     ┌ logo ──────────── bell avatar ≡ ┐  top bar (z 20)
+     │ .main (the only scroller)       │
+     ├━━━─────────────────────────────┤  light strip on the lit entry
+     └ 3 menu entries + More ──────────┘  bottom bar (z 20), safe area below
+   The drawer (z 30/40), dialogs and sheets (50) and toasts stay above both. */
+.web-topbar__actions,
+.web-tabbar {
+  display: none;
+}
+
+.web-count {
+  position: absolute;
+  top: -5px;
+  left: calc(50% + 4px);
+  min-width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-danger);
+  color: var(--color-on-danger);
+  box-shadow: 0 0 0 2px var(--color-surface);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 899px) {
+  .web-shell--app {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .web-shell--app .web-topbar {
+    gap: 8px;
+  }
+
+  .web-shell--app .web-topbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .web-topbar__icon {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 150ms ease-out, color 150ms ease-out;
+  }
+
+  .web-topbar__icon:active {
+    transform: scale(0.9);
+  }
+
+  .web-topbar__bell.is-active {
+    color: var(--color-primary);
+  }
+
+  .web-topbar__bell .web-count {
+    top: 2px;
+    left: 20px;
+  }
+
+  .web-topbar__avatar-face {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent-purple));
+    color: var(--avatar-ink, var(--color-bg));
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+  }
+
+  .web-topbar__icon:focus-visible,
+  .web-tabbar__item:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* The bar is the grid's last row: .main ends above it, so nothing hides
+     behind it and nothing shifts when it appears. */
+  .web-shell--app .main {
+    padding-bottom: 16px;
+  }
+
+  .web-shell--app .web-tabbar {
+    position: relative;
+    z-index: 20;
+    grid-column: 1;
+    grid-row: 3;
+    display: grid;
+    grid-template-columns: repeat(var(--tab-count), minmax(0, 1fr));
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* The one bold thing: a strip of light on the bar's edge, over the lit entry,
+     gliding to the next one. Transform only. */
+  .web-tabbar__light {
+    position: absolute;
+    top: -1px;
+    left: env(safe-area-inset-left);
+    width: calc((100% - env(safe-area-inset-left) - env(safe-area-inset-right)) / var(--tab-count));
+    height: 2px;
+    transform: translateX(calc(var(--tab-index) * 100%));
+    transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 150ms ease-out;
+    pointer-events: none;
+  }
+
+  .web-tabbar__light::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: 0 auto;
+    width: 32px;
+    border-radius: 0 0 2px 2px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent-purple));
+    box-shadow: 0 0 12px 1px rgb(var(--accent-rgb) / 0.55);
+  }
+
+  .web-tabbar__light.is-off {
+    opacity: 0;
+  }
+
+  .web-tabbar__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    min-width: 0;
+    min-height: 56px;
+    box-sizing: border-box;
+    padding: 8px 2px 6px;
+    border: none;
+    background: transparent;
+    color: var(--color-muted);
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 150ms ease-out;
+  }
+
+  .web-tabbar__item.is-active {
+    color: var(--color-text);
+  }
+
+  .web-tabbar__icon {
+    position: relative;
+    display: inline-flex;
+    transition: transform 120ms ease-out;
+  }
+
+  .web-tabbar__item.is-active .web-tabbar__icon {
+    color: var(--color-primary);
+  }
+
+  .web-tabbar__item:active .web-tabbar__icon {
+    transform: scale(0.86);
+  }
+
+  /* Up to two lines, broken between words (four 90px+ slots hold the longest
+     Armenian word, see PRIMARY_TABS); a word that still could not fit would
+     break inside rather than run into its neighbour. Never an ellipsis. */
+  .web-tabbar__label {
+    max-width: 100%;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  /* Toasts sit above the bottom bar instead of on it. */
+  .web-shell--app .web-notices {
+    bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+}
+
+/* The More sheet: the rest of the menu, Support, then the menu's cards. */
+.web-more {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-more__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  color: var(--color-text-soft);
+  font-size: 15px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 150ms ease-out;
+}
+
+.web-more__row:active {
+  background: rgb(var(--accent-rgb) / 0.08);
+}
+
+.web-more__row.is-active {
+  background: rgb(var(--accent-rgb) / 0.12);
+  color: var(--color-primary);
+}
+
+.web-more__row:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.web-more__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.web-more__row .web-count {
+  position: static;
+}
+
+.web-more__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-tabbar__light,
+  .web-tabbar__item,
+  .web-tabbar__icon,
+  .web-topbar__icon,
+  .web-more__row {
+    transition: none;
+  }
+
+  .web-tabbar__item:active .web-tabbar__icon,
+  .web-topbar__icon:active {
+    transform: none;
+  }
 }

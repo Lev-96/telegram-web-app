@@ -14,7 +14,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { notify } from "@/ui/notify";
 import { useWebText } from "@web/web/i18n";
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { isStandalone, isTelegramMiniApp } from "./environment";
+import { isInstalledApp } from "./environment";
 import { usePhoneNotifications, type EnableOutcome, type PhoneNotifications } from "./usePhoneNotifications";
 
 export interface PhoneNotificationsApi {
@@ -30,7 +30,7 @@ export const PhoneNotificationsProvider = ({ children }: { children: ReactNode }
   const tw = useWebText();
   const { user } = useAuth();
   // Where the page runs does not change while it is open.
-  const [installed] = useState(() => isStandalone() && !isTelegramMiniApp());
+  const [installed] = useState(isInstalledApp);
   const { state, enable, disable } = usePhoneNotifications(installed ? (user?.id ?? null) : null, (action) =>
     notify.message("error", tw(action === "enable" ? "web.app.enableFailed" : "web.app.disableFailed")),
   );
