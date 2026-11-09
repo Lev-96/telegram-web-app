@@ -2,20 +2,20 @@
  * The installed app's top-bar actions (2026-11-09), between the logo and the
  * menu button: the notifications bell with the menu's own unread count
  * (NotificationsContext, the source of the side menu's badge; no second
- * poller) and the person's avatar, which opens the panel's Profile (the same
- * dialog as the menu's account card → «Профиль»).
+ * poller) and the person's avatar, which opens the «Аккаунт» sheet (profile,
+ * switch account, sign out: the drawer's account card, AccountSheet.tsx).
  *
  * The account has no photo field (`AuthUser` is id / email / name / role), so
  * the avatar is the person's initials; a person icon when the name is empty.
  */
 import { useAuth } from "@/auth/AuthContext";
-import ProfileModal from "@/components/profile/ProfileModal";
 import { useLang } from "@/i18n/LanguageContext";
 import { useNotifications } from "@/notifications/NotificationsContext";
 import { useWebText } from "@web/web/i18n";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { countLabel, initialsOf } from "./sideMenu";
+import AccountSheet from "./AccountSheet";
+import { countLabel, initialsOf, useSideMenu } from "./sideMenu";
 
 const BellIcon = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -37,8 +37,10 @@ const AppTopActions = () => {
   const { t } = useLang();
   const tw = useWebText();
   const { pathname } = useLocation();
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const settingsElsewhere = useSideMenu().entries.some((e) => e.to === "/settings");
   const initials = initialsOf(user?.name);
+  const face = initials || <PersonIcon />;
   const bellLabel = unread > 0 ? `${t("nav.notifications")}, ${tw("web.shell.unread", unread)}` : t("nav.notifications");
   const onNotifications = pathname === "/notifications";
 
@@ -60,14 +62,16 @@ const AppTopActions = () => {
       <button
         type="button"
         className="web-topbar__icon web-topbar__avatar"
-        aria-label={user?.name ? `${t("profile.title")}: ${user.name}` : t("profile.title")}
-        onClick={() => setProfileOpen(true)}
+        aria-label={user?.name ? `${tw("web.shell.account")}: ${user.name}` : tw("web.shell.account")}
+        aria-haspopup="dialog"
+        aria-expanded={accountOpen}
+        onClick={() => setAccountOpen(true)}
       >
         <span className="web-topbar__avatar-face" aria-hidden="true">
-          {initials || <PersonIcon />}
+          {face}
         </span>
       </button>
-      {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
+      <AccountSheet open={accountOpen} onClose={() => setAccountOpen(false)} face={face} settingsElsewhere={settingsElsewhere} />
     </div>
   );
 };

@@ -27,7 +27,12 @@
  * bar also carries the notifications bell and the person's avatar, and a
  * bottom bar holds the side menu's entries (AppTabBar, the Sidebar's own
  * pipeline) with «More» for the rest. A browser tab and Telegram keep the
- * plain frame. Both bars are below the drawer (30/40) and every dialog (50).
+ * plain frame. Both bars are below every dialog (50).
+ *
+ * No burger and no drawer there (owner, 2026-11-09): the bar, «More» and the
+ * avatar's «Аккаунт» sheet hold everything the drawer offers
+ * (tests/appShell.test.tsx renders both and checks). From 900px the drawer
+ * element is the sidebar, so it stays mounted; below that web.css hides it.
  */
 import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderNotifier";
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
@@ -93,19 +98,25 @@ const Layout = () => {
           <header className="web-topbar">
             <img className="web-topbar__logo" src="./logo.png" alt="Cyber Place" />
             {appShell && <AppTopActions />}
-            <button
-              type="button"
-              className="web-topbar__menu"
-              aria-label={tw("web.menu")}
-              aria-expanded={drawer}
-              onClick={() => setDrawer((v) => !v)}
-            >
-              <span aria-hidden="true" />
-              <span aria-hidden="true" />
-              <span aria-hidden="true" />
-            </button>
+            {/* The installed app has no burger: the bottom bar, «More» and the
+                avatar's account sheet hold everything the drawer offers. */}
+            {!appShell && (
+              <button
+                type="button"
+                className="web-topbar__menu"
+                aria-label={tw("web.menu")}
+                aria-expanded={drawer}
+                onClick={() => setDrawer((v) => !v)}
+              >
+                <span aria-hidden="true" />
+                <span aria-hidden="true" />
+                <span aria-hidden="true" />
+              </button>
+            )}
           </header>
-          <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />
+          {!appShell && <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />}
+          {/* Kept in the installed app for a wide screen, where it is the
+              sidebar; below 900px web.css hides it there (no burger). */}
           <div className="web-drawer">
             <Sidebar footerExtra={menuCards} />
           </div>

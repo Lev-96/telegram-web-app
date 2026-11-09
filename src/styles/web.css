@@ -517,7 +517,8 @@
    top bar's right end, the menu button (6-8 of 36 headless WebKit frames,
    in a browser tab too; 0 with the glow stopped). Nobody sees the wordmark
    while the drawer is closed, so it stops there; it breathes again when the
-   drawer opens. */
+   drawer opens. The installed app has no drawer below 900px (not drawn at
+   all); this is for the browser tab and Telegram. */
 @media (max-width: 899px) {
   .web-shell:not(.is-drawer-open) .web-drawer .sidebar h1 span {
     animation: none;
@@ -1167,6 +1168,12 @@
     gap: 8px;
   }
 
+  /* No drawer in the installed app (2026-11-09): the bar, «More» and the
+     account sheet carry all of it. The element stays for the wide layout. */
+  .web-shell.web-shell--app .web-drawer {
+    display: none;
+  }
+
   .web-shell--app .web-topbar__actions {
     display: flex;
     align-items: center;
@@ -1371,6 +1378,87 @@
 
 .web-more__row .web-count {
   position: static;
+}
+
+/* Rows that are buttons (the account sheet) look like the link rows. */
+button.web-more__row {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-more__row--danger {
+  color: var(--color-danger);
+}
+
+.web-more__chevron {
+  color: var(--color-muted);
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* The «Аккаунт» sheet's head: who is signed in, as the drawer's account card says it. */
+.web-account__who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 4px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.web-account__face {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent-purple));
+  color: var(--avatar-ink, var(--color-bg));
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.web-account__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.web-account__name {
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.web-account__email {
+  color: var(--color-muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.web-account__role {
+  margin-top: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--accent-purple-rgb) / 0.45);
+  background: rgb(var(--accent-purple-rgb) / 0.14);
+  color: var(--color-accent-purple);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* The panel's account picker inside the sheet: its rows at the sheet's width. */
+.web-account__switch {
+  min-width: 0;
 }
 
 .web-more__cards {

@@ -64,6 +64,7 @@ export const WEB_TEXT = {
   // The installed app's phone shell (2026-11-09): the bottom bar and its sheet.
   "web.shell.sections": { en: "Sections", ru: "Разделы", am: "Բաժիններ" },
   "web.shell.more": { en: "More", ru: "Ещё", am: "Ավելին" },
+  "web.shell.account": { en: "Account", ru: "Аккаунт", am: "Հաշիվ" },
   "web.shell.unread": { en: "{0} unread", ru: "{0} непрочитанных", am: "{0} չկարդացված" },
 
   "web.telegram.title": { en: "Telegram", ru: "Telegram", am: "Telegram" },

@@ -157,7 +157,7 @@ describe("what the desktop shell mounts above every screen (panel 2026-10-26/27)
 
 
 describe("the installed app's phone shell (2026-11-09)", () => {
-  it("installed, outside Telegram: bell and avatar between the logo and the menu button, and the bottom bar after the screen", () => {
+  it("installed, outside Telegram: the logo, then bell and avatar (no burger), and the bottom bar after the screen", () => {
     document.documentElement.dataset.shell = "web";
     auth.role = "company_owner";
     asInstalled(true);
@@ -165,7 +165,11 @@ describe("the installed app's phone shell (2026-11-09)", () => {
     const shell = container.querySelector(".web-shell")!;
     expect(shell.classList.contains("web-shell--app")).toBe(true);
     const bar = container.querySelector(".web-topbar")!;
-    expect([...bar.children].map((el) => el.className)).toEqual(["web-topbar__logo", "web-topbar__actions", "web-topbar__menu"]);
+    // No burger and no drawer backdrop: everything the drawer offers is on the bars and their sheets.
+    expect([...bar.children].map((el) => el.className)).toEqual(["web-topbar__logo", "web-topbar__actions"]);
+    expect(container.querySelector(".web-drawer-backdrop")).toBeNull();
+    // The drawer element stays for the wide layout (it is the sidebar there); web.css hides it below 900px.
+    expect(container.querySelector(".web-drawer .sidebar")).not.toBeNull();
     const tabbar = shell.querySelector(":scope > nav.web-tabbar")!;
     expect(tabbar.previousElementSibling?.tagName).toBe("MAIN");
     // The More sheet carries the menu's own footer cards, the same ones the drawer has.
@@ -177,6 +181,8 @@ describe("the installed app's phone shell (2026-11-09)", () => {
     document.documentElement.dataset.shell = "web";
     asInstalled(false);
     const { container } = mount();
+    expect([...container.querySelector(".web-topbar")!.children].map((el) => el.className)).toEqual(["web-topbar__logo", "web-topbar__menu"]);
+    expect(container.querySelector(".web-drawer-backdrop")).not.toBeNull();
     expect(container.querySelector(".web-shell--app")).toBeNull();
     expect(container.querySelector(".web-tabbar")).toBeNull();
     expect(container.querySelector(".web-topbar__actions")).toBeNull();
@@ -190,6 +196,7 @@ describe("the installed app's phone shell (2026-11-09)", () => {
     asInstalled(true);
     enterTelegram();
     const { container } = mount();
+    expect(container.querySelector(".web-topbar__menu")).not.toBeNull();
     expect(container.querySelector(".web-shell--app")).toBeNull();
     expect(container.querySelector(".web-tabbar")).toBeNull();
     expect(container.querySelector(".web-topbar__actions")).toBeNull();

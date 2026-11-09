@@ -18,10 +18,12 @@ interface Props {
   title: string;
   /** What the sheet currently shows; a change moves the focus to its `data-autofocus`. */
   view?: string;
+  /** Ask before closing over changed fields (the Modal's default). A sheet whose only field is a filter says false. */
+  confirmOnDirty?: boolean;
   children: ReactNode;
 }
 
-const WebSheet = ({ open, onClose, title, view, children }: Props) => {
+const WebSheet = ({ open, onClose, title, view, confirmOnDirty, children }: Props) => {
   const titleId = useId();
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -30,7 +32,7 @@ const WebSheet = ({ open, onClose, title, view, children }: Props) => {
   }, [open, view]);
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={onClose} confirmOnDirty={confirmOnDirty}>
       <div ref={cardRef} className="card web-sheet" role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <h2 id={titleId} className="web-sheet__title">
           {title}
