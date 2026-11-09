@@ -23,7 +23,7 @@ fetch-panel`) for how its screens work, and the backend's for the API.
   |---|---|
   | `@/api/auth` | sign in/out through `/owner-web/session/*`; the desktop's `/session/logout` deletes EVERY token of the user, the desktop's included |
   | `@/infrastructure/KeyValueStore` | web: everything in `localStorage`, so a sign-in survives closing the browser (bounded by the server's 30-day lifetime / 14-day idle); Telegram: the session in `sessionStorage` |
-  | `@/components/Layout` | a shell that works from 360px: below 900px a 52px top bar with the logo on the LEFT and the menu button on the RIGHT, and a drawer that slides in from the right; mounts every notifier the desktop shell mounts, and above the screen the same `PageTopBar` (back button + docked heading), `UnsavedInterfaceNotice` and `NewInterfacesOffer` (since panel.ref 61f0e72 = v1.0.54; the bar's side-menu toggle renders nothing without the desktop's `AppShell`). When bumping `panel.ref`, diff the panel's `src/components/Layout.tsx` since the old pin and mirror what it mounts (`tests/layout.test.tsx`). "Telegram" is a card in the menu (panel Sidebar's `footerExtra` slot, `src/web/TelegramMenuEntry.tsx`), for an owner in a browser only; no top-bar or corner button |
+  | `@/components/Layout` | a shell that works from 360px: below 900px a 52px top bar with the logo on the LEFT and the menu button on the RIGHT, and a drawer that slides in from the right; mounts every notifier the desktop shell mounts, and above the screen the same `PageTopBar` (back button + docked heading), `UnsavedInterfaceNotice` and `NewInterfacesOffer` (since panel.ref 61f0e72 = v1.0.54; the bar's side-menu toggle renders nothing without the desktop's `AppShell`). When bumping `panel.ref`, diff the panel's `src/components/Layout.tsx` since the old pin and mirror what it mounts (`tests/layout.test.tsx`). "Telegram" is a card in the menu (panel Sidebar's `footerExtra` slot, `src/web/TelegramMenuEntry.tsx`), for an owner in a browser only; no top-bar or corner button. In the installed app (not Telegram) also the bell, avatar and bottom bar: see "Installed app: the phone shell" |
   | `@/routes/Login` | the desktop's sign-in pieces incl. the forgot-password flip (`#/forgot-password`); a language pill hands the choice to the next account (`notePreLoginChoice`); in Telegram it says "reopen from the bot" |
   | `@/i18n/languagePreference` | the account's language is ALSO kept on the server (`GET/PUT /user/locale`), so it is asked once per account — never again on another device or after Telegram wipes its storage; before any choice the sign-in opens in Telegram's / the browser's language |
   | `@/routes/ResetPassword` | the mailed reset link's screen: no token field, the secret dropped from the URL, one way forward from a dead link. Opened from an INVITATION (`&purpose=invite`, a new owner's or manager's first password, 2026-09-30) it says "set your password" and welcomes them, without the sign-out-everywhere note. `main.tsx` renders it STANDALONE when opened on `#/reset-password` — signed in or not — because the panel's signed-in routes would send the link to the dashboard |
@@ -321,3 +321,65 @@ full-screen «Подробнее» drawer are the PANEL's CSS (`global.css`, ins
 reach this app only with a `panel.ref` bump to a panel commit that has them;
 nothing is overridden here. On phones `.web-shell .card` (12px padding, above)
 still wins over the card's own padding.
+
+## Installed app: the phone shell (2026-11-09)
+
+Only `isInstalledApp()` (`src/web/pwa/environment.ts`: `isStandalone() &&
+!isTelegramMiniApp()`, also what `PhoneNotificationsProvider` uses) and only
+below 900px. A browser tab, the Telegram Mini App and the wide layout keep the
+plain frame. The Layout override adds `.web-shell--app` and:
+
+- **Top bar**: logo, then `src/web/appShell/AppTopActions.tsx` (bell, avatar),
+  then the menu button; the drawer still opens from it. The bell's count is
+  `useNotifications().unreadCount`, the side menu's own badge source (no
+  second poller), and links to `#/notifications`. The avatar is initials
+  (`initialsOf`) or a person icon: `AuthUser` has **no photo field**; a
+  photo needs a backend field first. It opens the panel's `ProfileModal`.
+- **Bottom bar** `src/web/appShell/AppTabBar.tsx`: the side menu's entries
+  from `useSideMenu()` (`src/web/appShell/sideMenu.ts`), the Sidebar's own
+  pipeline (`menuSpecsFor` → `withStaffMenu` → `sortedNavItems` →
+  `applyPersonalMenu`, as the panel's Appearance screen does). Never list
+  entries here. `tests/appShell.test.tsx` renders the real Sidebar beside
+  it per role and with a personal arrangement; a panel change to the
+  Sidebar's pipeline must be mirrored in `useSideMenu` (that test fails
+  otherwise). The first `PRIMARY_TABS` (3) entries sit on the bar, the rest
+  in a «More» sheet (`WebSheet`) with Support and the menu's footer cards
+  (Telegram, phone app). Three, not four: measured, Armenian
+  «մասնաճյուղերը» is 81-84px at the bar's 10px label and five slots at 360px
+  give 72px. More's badge sums what is inside except notifications (the bell
+  has them). The bar is the shell grid's third row (z 20): `.main` ends above
+  it, no padding trick. Drawer 30/40, dialogs 50, toasts above it
+  (`.web-shell--app .web-notices`).
+- Motion: a light strip glides to the lit entry (transform, 240ms), the
+  icon dips on tap, the sheet is the panel Modal's slide-up, the page entry
+  is the panel's own `cp-page-in`. `prefers-reduced-motion`: none of it.
+
+## The billing cover on a phone (2026-11-09)
+
+The panel's `.billing-lock` (Active Places, Tournaments) is a
+`backdrop-filter` layer inside the screen, 16px larger than its box and as
+tall as the board. Below 900px only `.main`'s overflow clip kept it off the
+top bar, and iOS WebKit does not hold an async-scrolled backdrop-filter layer
+to that clip, so the logo and menu button were blurred once the board
+scrolled. web.css (below 900px, `.web-shell` only, not
+`.billing-lock--screen`): the cover ends at the screen's edges, has no
+`backdrop-filter` (a denser tint), the bars get their own compositing layer,
+and `--main-pad-top` is 0 so the PageTopBar band no longer reaches 16px
+above `.main`. The session-ending cards (`.ending-soon-stack`) now join
+`.web-notices` instead of covering the top bar. Not reproducible headless
+(Chromium, WebKitGTK clip correctly); verified there that the cover never
+reaches either bar, and by tests on the rules. Harness and screenshots:
+`~/cyber-place-local/reports/owner-web-mobile-shell-2026-11-09/`.
+
+## The closed drawer's wordmark (2026-11-09)
+
+The menu's «CYBER PLACE» breathes with an endless drop-shadow `filter` (panel
+`brandGlow`, up to a 28px blur). With the drawer closed just off the right
+edge, WebKit drew that filter's area as a solid black or white block over
+the top bar's right end, the menu button (6-8 of 36 headless WebKit frames,
+in a browser tab as well; present before the phone shell, not caused by it;
+0 with the glow stopped). Below 900px web.css stops the wordmark's
+animation while the drawer is closed. The shot harness
+(`~/cyber-place-local/reports/owner-web-mobile-shell-2026-11-09/harness/`,
+`pixels.py`) now fails any frame whose bell, avatar or menu-button area is
+not drawn in the bar's colours.
