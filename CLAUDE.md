@@ -82,10 +82,18 @@ production bot at staging. Railway does not expand `${VAR}`: literal values.
 
 `Caddyfile` serves `dist/` as an allowlist: only GET/HEAD (405 otherwise) and
 only the page and its built files (`/`, `/index.html`, `/logo.png`,
-`/assets/*`, `/fonts/*`, `/bg/*` — the app routes by hash); everything else is
-404. CSP as an HTTP header (only there does `frame-ancestors` work; it admits
-Telegram's web clients and nobody else), HSTS, nosniff, no-referrer, CORP.
-Add a new top-level public file? Add its path to the `@app` matcher.
+`/assets/*`, `/fonts/*`, `/bg/*`, `/sounds/*`, and the installable app's
+`/sw.js`, `/manifest.webmanifest`, `/icons/*` — the app routes by hash);
+everything else is 404. CSP as an HTTP header (only there does `frame-ancestors`
+work; it admits Telegram's web clients and nobody else; `manifest-src 'self'`
+and `worker-src 'self'` cover the PWA), HSTS, nosniff, no-referrer, CORP.
+`/sw.js` and `/manifest.webmanifest` are `no-cache` like index.html; the
+manifest's Content-Type is set explicitly (not every MIME table knows it).
+Add a new top-level public file (in the panel's `public/` or in `static/`)?
+Add its path to the `@app` matcher: `tests/caddyfile.test.ts` fails when a
+top-level name in either directory is not covered. **`/sounds/*` was missing
+until 2026-11-09**: every melody chosen in Settings was a 404 and the panel fell
+back to its default chime.
 
 ## Checks
 
@@ -196,3 +204,80 @@ mark appears here when `panel.ref` is bumped to a panel commit that has it.
 area). Tab and home-screen icons are square files in `src/web/icons/`
 (linked from `index.html`, bundled by Vite into `/assets/`); they used to be
 the wide `logo.png`.
+
+## Installable app and phone notifications (2026-11-09)
+
+- **Owner-web-only root files live in `static/`** (`manifest.webmanifest`,
+  `sw.js`, `icons/`), copied to the root of `dist/` by the Vite plugin
+  `scripts/ownerWebStatic.mjs` (and served by it in `npm run dev`). Never put
+  them in the panel's `public/` (Vite's `publicDir` here): the desktop app would
+  ship them. A name in both directories fails the build.
+- **Manifest**: "Cyber Place Owner" / "Cyber Place", `start_url` and `scope`
+  `/`, `display: standalone`, theme and background `#020514` (the panel's
+  `--color-bg`). Icons 192/512 `any` (the apple-touch-icon composition: mark
+  136/180 of the side on navy) and `maskable` (mark 62% wide, inside the 80%
+  safe circle). Generated with ImageMagick from the brand kit's
+  `mark-master.png`, the 835px master the panel's `public/logo.png` (328px) is
+  scaled from, so the 512px icons are not upscaled. `index.html` links the
+  manifest plus `mobile-web-app-capable`, `apple-mobile-web-app-capable`,
+  `apple-mobile-web-app-title`.
+- **Service worker `/sw.js`** (classic script, root scope, same origin):
+  `push` shows `{title, body, url, tag, icon}` (defaults when missing or
+  broken; same tag replaces and re-alerts); `notificationclick` focuses an open
+  window and navigates it to `url`, or opens one; a `url` on another origin
+  becomes `/`. `fetch`: navigations pass to the network (`respondWith(fetch())`),
+  nothing else is intercepted. **It caches nothing**: app updates keep arriving
+  through `index.html` `no-cache`. `skipWaiting` + `clients.claim`. `main.tsx`
+  registers it on `load` in a browser (never in Telegram). To retire it, ship
+  a `sw.js` that unregisters itself; never delete the file.
+- **Menu card** `src/web/PhoneAppMenuEntry.tsx` (in the Sidebar's
+  `footerExtra`, after the Telegram card, Support's card styles + `.web-menu-card`
+  in web.css):
+  - Telegram Mini App: a note that notices come from the bot; no install.
+  - Chrome: `beforeinstallprompt` is captured at start (`src/web/pwa/installPrompt.ts`,
+    `preventDefault`, so the menu is the one offer) → «Установить приложение»
+    → Chrome's dialog; `appinstalled` removes it.
+  - iOS (no prompt exists): the card unfolds Share → «На экран „Домой“»; iOS
+    web push works only in the installed app (iOS 16.4+). Armenian names
+    Safari's English labels (iOS has no Armenian UI).
+  - Installed (`display-mode: standalone` / `navigator.standalone`): the
+    phone-notifications switch (`src/web/pwa/usePhoneNotifications.ts`,
+    transport `src/web/pwa/webPush.ts` through the panel's `request`).
+- **Backend contract**: `GET /web-push/public-key` → `{public_key: string|null}`
+  (null or 404 = feature off → the switch is hidden; another error also hides
+  it until the next load); `POST /web-push/subscriptions` `{endpoint, keys:
+  {p256dh, auth}, content_encoding: "aes128gcm"}`; `DELETE
+  /web-push/subscriptions` `{endpoint}`. Enable = permission question FIRST in
+  the tap (Safari needs the gesture) → register → `serviceWorker.ready` →
+  `subscribe({userVisibleOnly, applicationServerKey})` → POST; a POST the
+  server refuses unsubscribes again. On load with permission granted the
+  existing subscription is re-POSTed silently (also on an account change); one
+  made with a different server key is dropped (DELETE + unsubscribe). Turn off
+  = DELETE then unsubscribe. **Sign-out** (`src/overrides/auth.ts`) removes the
+  subscription (DELETE + unsubscribe, bounded to 3 s) before the session ends,
+  so a phone does not keep receiving an account it left.
+- Tests: `tests/phoneApp.test.tsx` (install, iOS, Telegram, subscribe order and
+  exact body, feature off null/404, blocked, unsupported, refusal, turn off,
+  re-sync, key change, sign-out, key read 404 vs 500), `tests/serviceWorker.test.ts`
+  (runs `static/sw.js` in a vm sandbox), `tests/caddyfile.test.ts` (allowlist vs
+  `public/` + `static/`, cache and CSP, manifest and icon sizes, index.html),
+  `tests/layout.test.tsx`. Mutation-verified (12): allowlist without
+  `/sounds/*` or `/icons/*`, worker before the permission question,
+  `content_encoding` dropped, 404 not "off", turn-off without DELETE, Telegram
+  not detected, offer not held, foreign url followed, open window not
+  navigated, every request intercepted, sign-out keeps the subscription.
+- Verified in headless Chromium against `vite preview` (external requests
+  blocked): the worker registers at `/` and controls the page, the manifest
+  parses with no errors, installability errors only `in-incognito` (Playwright's
+  context), and a push delivered through CDP showed exactly the payload's
+  title, body, tag, icon and url. NOT verified: a real Android install, iOS
+  home-screen push, and the Caddyfile under a real Caddy (none locally).
+
+## The platform bill on a phone (2026-11-09)
+
+The compact «Общая задолженность Cyber Place Platform» card and the
+full-screen «Подробнее» drawer are the PANEL's CSS (`global.css`, inside
+`max-width: 640px` / `480px`; see the panel's CLAUDE.md, "On a phone"). They
+reach this app only with a `panel.ref` bump to a panel commit that has them;
+nothing is overridden here. On phones `.web-shell .card` (12px padding, above)
+still wins over the card's own padding.
