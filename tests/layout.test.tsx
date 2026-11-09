@@ -34,6 +34,7 @@ vi.mock("@/components/ui/BackButton", () => ({ default: () => null }));
 vi.mock("@/components/ui/PageTopBar", () => ({ default: () => <div data-testid="page-topbar" /> }));
 vi.mock("@/components/appearance/UnsavedInterfaceNotice", () => ({ default: () => <div data-testid="unsaved-interface" /> }));
 vi.mock("@/components/appearance/NewInterfacesOffer", () => ({ default: () => <div data-testid="new-interfaces" /> }));
+vi.mock("@web/web/PhoneAppMenuEntry", () => ({ default: () => <div data-testid="phone-app" /> }));
 vi.mock("@/ps5/Ps5ControlProvider", () => ({ Ps5ControlProvider: ({ children }: { children: ReactNode }) => <>{children}</> }));
 vi.mock("@/api/client", () => ({
   request: async (path: string) => {
@@ -99,6 +100,17 @@ describe("web shell frame", () => {
     const { container } = mount();
     expect(container.querySelector(".web-telegram-entry")).toBeNull();
     expect(handoff.calls).toEqual([]);
+  });
+});
+
+describe("the installable app's card (2026-11-09)", () => {
+  it.each(["web", "telegram"])("sits in the menu, after the Telegram card (%s)", (shell) => {
+    document.documentElement.dataset.shell = shell;
+    auth.role = "company_owner";
+    const { container } = mount();
+    const footer = container.querySelector(".sidebar")!;
+    const ids = Array.from(footer.children).map((el) => el.getAttribute("data-testid") ?? el.className);
+    expect(ids).toEqual(shell === "web" ? ["nav-support-card web-telegram-entry", "phone-app"] : ["phone-app"]);
   });
 });
 

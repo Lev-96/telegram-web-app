@@ -43,9 +43,11 @@
   display: none;
 }
 
-/* The Telegram card in the menu is a link dressed as Support's card
-   (.nav-support-card): the same box, left-aligned, the page's font. */
-.web-telegram-entry {
+/* The Telegram card and the installable app's card (2026-11-09) in the menu
+   are a link / button dressed as Support's card (.nav-support-card): the same
+   box, left-aligned, the page's font. */
+.web-telegram-entry,
+.web-menu-card {
   width: 100%;
   box-sizing: border-box;
   font: inherit;
@@ -56,13 +58,86 @@
   cursor: pointer;
 }
 
-.web-telegram-entry .nav-support-card__icon {
+.web-telegram-entry .nav-support-card__icon,
+.web-menu-card .nav-support-card__icon {
   color: var(--color-primary);
 }
 
-.web-telegram-entry:focus-visible {
+.web-telegram-entry:focus-visible,
+.web-menu-card:focus-visible,
+.web-menu-card__action:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* A status, not a control: no hover lift, no pointer. */
+.web-menu-card.is-static {
+  cursor: default;
+}
+
+.web-menu-card.is-static:hover {
+  border-color: var(--color-border);
+  color: var(--color-muted);
+}
+
+.web-menu-card:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+/* Its sentences are longer than Support's two words: they wrap instead of
+   being cut (Armenian is the longest), at word boundaries. With «Turn off»
+   beside them the words keep at least 140px and the button wraps to its own
+   line, on the right, rather than squeezing a word apart. */
+.web-menu-card {
+  flex-wrap: wrap;
+}
+
+.web-menu-card .nav-support-card__text {
+  flex: 1 1 140px;
+}
+
+.web-menu-card .nav-support-card__title,
+.web-menu-card .nav-support-card__hint {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* 40px: the touch size every pressed control keeps here (see pointer: coarse). */
+.web-menu-card__action {
+  flex-shrink: 0;
+  margin-left: auto;
+  min-height: 40px;
+  padding: 4px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+
+.web-menu-card__action:hover {
+  border-color: var(--color-primary);
+}
+
+.web-menu-card-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.web-menu-card__help {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-soft);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 /* ── narrow: top bar + drawer ─────────────────────────────────────────── */

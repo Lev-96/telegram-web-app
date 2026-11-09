@@ -74,6 +74,39 @@ export const WEB_TEXT = {
     am: "Աշխատանք բոտով",
   },
 
+  // The installable app and its phone notifications (2026-11-09, the menu card).
+  "web.app.install": { en: "Install the app", ru: "Установить приложение", am: "Տեղադրել հավելվածը" },
+  "web.app.installHint": { en: "On your phone's home screen", ru: "На главный экран телефона", am: "Հեռախոսի գլխավոր էկրանին" },
+  "web.app.iosHint": { en: "iPhone: from the Share menu", ru: "iPhone: через меню «Поделиться»", am: "iPhone՝ «Share» ցանկից" },
+  // iOS has no Armenian interface: the Armenian text names Safari's English labels.
+  "web.app.iosSteps": {
+    en: "In Safari, tap Share, then «Add to Home Screen». Open Cyber Place from the home screen: phone notifications work only there (iOS 16.4 or newer).",
+    ru: "В Safari нажмите «Поделиться», затем «На экран „Домой“». Открывайте Cyber Place с экрана «Домой»: уведомления на телефоне работают только там (iOS 16.4 или новее).",
+    am: "Safari-ում սեղմեք «Share», ապա «Add to Home Screen»։ Բացեք Cyber Place-ը հիմնական էկրանից՝ հեռախոսի ծանուցումներն աշխատում են միայն այնտեղ (iOS 16.4 կամ ավելի նոր)։",
+  },
+  "web.app.notifications": { en: "Phone notifications", ru: "Уведомления на телефоне", am: "Ծանուցումներ հեռախոսում" },
+  "web.app.enable": { en: "Turn on phone notifications", ru: "Включить уведомления на телефоне", am: "Միացնել ծանուցումները հեռախոսում" },
+  "web.app.enableHint": { en: "Even when the app is closed", ru: "Даже когда приложение закрыто", am: "Նույնիսկ երբ հավելվածը փակ է" },
+  "web.app.on": { en: "On for this phone", ru: "Включены на этом телефоне", am: "Միացված են այս հեռախոսում" },
+  "web.app.off": { en: "Turn off", ru: "Выключить", am: "Անջատել" },
+  "web.app.blocked": {
+    en: "Blocked by the browser. Allow them in the phone's settings.",
+    ru: "Заблокированы браузером. Разрешите их в настройках телефона.",
+    am: "Արգելափակված են բրաուզերում։ Թույլատրեք դրանք հեռախոսի կարգավորումներում։",
+  },
+  "web.app.unsupported": { en: "This browser does not support them", ru: "Этот браузер их не поддерживает", am: "Այս բրաուզերը դրանք չի աջակցում" },
+  "web.app.telegram": { en: "In Telegram they come from the bot", ru: "В Telegram они приходят от бота", am: "Telegram-ում դրանք գալիս են բոտից" },
+  "web.app.enableFailed": {
+    en: "Notifications could not be turned on. Try again.",
+    ru: "Не удалось включить уведомления. Попробуйте ещё раз.",
+    am: "Չհաջողվեց միացնել ծանուցումները։ Կրկին փորձեք։",
+  },
+  "web.app.disableFailed": {
+    en: "Notifications could not be turned off. Try again.",
+    ru: "Не удалось выключить уведомления. Попробуйте ещё раз.",
+    am: "Չհաջողվեց անջատել ծանուցումները։ Կրկին փորձեք։",
+  },
+
   "web.tg.signingIn": { en: "Signing in with Telegram…", ru: "Вход через Telegram…", am: "Մուտք Telegram-ով…" },
   "web.tg.linking": { en: "Linking your Telegram…", ru: "Привязываем Telegram…", am: "Կապում ենք Telegram-ը…" },
   // The server's refusals of a web sign-in, said by their `code` so the

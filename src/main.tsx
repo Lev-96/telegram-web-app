@@ -8,6 +8,8 @@ import TelegramGate from "@web/telegram/TelegramGate";
 import { prepareTelegramChrome, readTelegramLaunch } from "@web/telegram/telegram";
 import ResetPassword, { isResetLink } from "@web/overrides/ResetPassword";
 import { isTouchDevice, lockPageZoom } from "@web/web/pageZoom";
+import { startInstallCapture } from "@web/web/pwa/installPrompt";
+import { registerWorker } from "@web/web/pwa/webPush";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -21,6 +23,16 @@ if (launch) {
   prepareTelegramChrome(launch.webApp);
 } else {
   document.documentElement.dataset.shell = "web";
+}
+
+// The installable app (2026-11-09), in a browser only (never inside Telegram):
+// Chrome's install offer is held for the menu's button, and the service worker
+// (push notifications; no caching) is registered once the page has loaded.
+if (!launch) {
+  startInstallCapture();
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => void registerWorker().catch(() => undefined), { once: true });
+  }
 }
 
 // Phones and tablets: the page stays at 100% (see pageZoom.ts).

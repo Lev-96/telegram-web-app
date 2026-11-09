@@ -18,6 +18,14 @@
          wide logo.png was squeezed into a square by browsers. -->
     <link rel="icon" type="image/png" sizes="32x32" href="/src/web/icons/favicon-32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/src/web/icons/apple-touch-icon.png" />
+    <!-- Installable app (2026-11-09): the manifest and its icons live in
+         static/ (copied to the root of dist/, never into the desktop app).
+         iOS reads the two apple-* tags for a home-screen app; its web push
+         works only for the installed app (iOS 16.4+). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Cyber Place" />
     <title>Cyber Place</title>
   </head>
   <body>

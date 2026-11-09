@@ -13,7 +13,8 @@
  * Telegram's narrow view. In a browser an owner's menu also carries a
  * "Telegram" card (Sidebar's footer slot): one tap opens the Mini App in
  * Telegram, signed in. A manager never has Telegram, and inside Telegram it
- * would be circular.
+ * would be circular. Below it, the installable app's card (PhoneAppMenuEntry):
+ * install, or in the installed app the phone-notifications switch.
  */
 import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderNotifier";
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
@@ -27,6 +28,7 @@ import Sidebar from "@/components/Sidebar";
 import PageTopBar from "@/components/ui/PageTopBar";
 import { useAuth } from "@/auth/AuthContext";
 import { Ps5ControlProvider } from "@/ps5/Ps5ControlProvider";
+import PhoneAppMenuEntry from "@web/web/PhoneAppMenuEntry";
 import TelegramMenuEntry from "@web/web/TelegramMenuEntry";
 import { useWebText } from "@web/web/i18n";
 import { useEffect, useState } from "react";
@@ -72,7 +74,15 @@ const Layout = () => {
         </header>
         <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />
         <div className="web-drawer">
-          <Sidebar footerExtra={offersTelegram ? <TelegramMenuEntry onNavigate={() => setDrawer(false)} /> : undefined} />
+          <Sidebar
+            footerExtra={
+              <>
+                {offersTelegram && <TelegramMenuEntry onNavigate={() => setDrawer(false)} />}
+                {/* Install the app / phone notifications (2026-11-09); in Telegram, a note that notices come from the bot. */}
+                <PhoneAppMenuEntry />
+              </>
+            }
+          />
         </div>
         <main className="main">
           {/* What the desktop shell mounts above every screen (panel
