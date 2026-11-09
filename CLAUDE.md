@@ -237,12 +237,39 @@ the wide `logo.png`.
   - Chrome: `beforeinstallprompt` is captured at start (`src/web/pwa/installPrompt.ts`,
     `preventDefault`, so the menu is the one offer) → «Установить приложение»
     → Chrome's dialog; `appinstalled` removes it.
-  - iOS (no prompt exists): the card unfolds Share → «На экран „Домой“»; iOS
-    web push works only in the installed app (iOS 16.4+). Armenian names
+  - iOS (no prompt exists): the card unfolds four numbered steps
+    (`src/web/IosInstallSteps.tsx`: Share, «На экран „Домой“» / «Ещё»,
+    «Добавить» + sign in, «Разрешить уведомления»; Safari's icons inline; a
+    note that it needs Safari or iOS 16.4+ and not the Telegram app). iOS web
+    push works only in the installed app (iOS 16.4+). Armenian names
     Safari's English labels (iOS has no Armenian UI).
   - Installed (`display-mode: standalone` / `navigator.standalone`): the
     phone-notifications switch (`src/web/pwa/usePhoneNotifications.ts`,
     transport `src/web/pwa/webPush.ts` through the panel's `request`).
+- **One notifications state per app** (2026-11-09):
+  `src/web/pwa/PhoneNotificationsContext.tsx` runs `usePhoneNotifications`
+  ONCE, mounted by the Layout override around the whole shell (outside the
+  Sidebar, so it runs with the drawer closed), and only in the installed app
+  outside Telegram (elsewhere it stays "hidden" and asks the server nothing).
+  The menu card and the prompt read it with `usePhoneNotificationsState()`;
+  never call the hook from a component. Field evidence that forced this: an
+  installed iPhone read `/web-push/public-key` and never POSTed, because the
+  only "turn on" was hidden in the off-canvas menu.
+- **First-launch prompt** `src/web/PhoneNotificationsPrompt.tsx` (Layout, keyed
+  by the user id): a bottom sheet (`src/web/WebSheet.tsx` = the panel's
+  `Modal` + `.web-sheet`, centred from 600px) when the shared state is "off"
+  and `Notification.permission === "default"`. «Разрешить уведомления» calls
+  `enable()` straight from the tap (iOS/Chrome ask only from a gesture; one
+  tap is unavoidable) → toast «Уведомления включены». «Позже» / × / Escape:
+  hidden in memory until the next launch. Denied: the sheet shows how to
+  allow again (iOS: Настройки → Уведомления → Cyber Place → Допуск
+  уведомлений) and never nags afterwards (the permission is no longer
+  "default"; the card keeps the blocked note).
+- **Install banner** `src/web/InstallBanner.tsx` (Layout, keyed by the user id):
+  in a browser tab, signed in, below 900px (CSS): iOS → «Как установить»
+  opens the same four steps in a sheet; Chrome → «Установить» while an offer
+  is held. Closing or using it is remembered for the browser session
+  (`sessionStorage`, `u{id}:cp.web.installBanner.closed`).
 - **Backend contract**: `GET /web-push/public-key` → `{public_key: string|null}`
   (null or 404 = feature off → the switch is hidden; another error also hides
   it until the next load); `POST /web-push/subscriptions` `{endpoint, keys:
@@ -252,13 +279,22 @@ the wide `logo.png`.
   `subscribe({userVisibleOnly, applicationServerKey})` → POST; a POST the
   server refuses unsubscribes again. On load with permission granted the
   existing subscription is re-POSTed silently (also on an account change); one
-  made with a different server key is dropped (DELETE + unsubscribe). Turn off
+  made with a different server key is dropped (DELETE + unsubscribe) and made
+  again; granted with NO subscription subscribes again silently (register →
+  ready → subscribe → POST, no question: the permission is already given); a
+  silent subscribe or POST that fails reads "off" (the new subscription is
+  dropped) and the card / prompt offer the tap. Turn off
   = DELETE then unsubscribe. **Sign-out** (`src/overrides/auth.ts`) removes the
   subscription (DELETE + unsubscribe, bounded to 3 s) before the session ends,
-  so a phone does not keep receiving an account it left.
+  so a phone does not keep receiving an account it left; the next sign-in on
+  a phone that allows notifications is subscribed again silently, under its
+  own account.
 - Tests: `tests/phoneApp.test.tsx` (install, iOS, Telegram, subscribe order and
   exact body, feature off null/404, blocked, unsupported, refusal, turn off,
-  re-sync, key change, sign-out, key read 404 vs 500), `tests/serviceWorker.test.ts`
+  re-sync, key change, sign-out, key read 404 vs 500; since 2026-11-09 also
+  one shared instance, the prompt's exact conditions, permission asked
+  synchronously in the tap, «Позже», denied view, silent re-subscribe, the
+  steps in ru/en/am, the banner), `tests/serviceWorker.test.ts`
   (runs `static/sw.js` in a vm sandbox), `tests/caddyfile.test.ts` (allowlist vs
   `public/` + `static/`, cache and CSP, manifest and icon sizes, index.html),
   `tests/layout.test.tsx`. Mutation-verified (12): allowlist without
@@ -266,6 +302,10 @@ the wide `logo.png`.
   `content_encoding` dropped, 404 not "off", turn-off without DELETE, Telegram
   not detected, offer not held, foreign url followed, open window not
   navigated, every request intercepted, sign-out keeps the subscription.
+  2026-11-09 (8 more): worker before the question, prompt defers `enable()`
+  past the tap, no silent re-subscribe, re-subscribe without POST, card or
+  prompt running its own hook instance (2), prompt ignoring
+  `permission !== "default"`, provider not limited to the installed app.
 - Verified in headless Chromium against `vite preview` (external requests
   blocked): the worker registers at `/` and controls the page, the manifest
   parses with no errors, installability errors only `in-incognito` (Playwright's
