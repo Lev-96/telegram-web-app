@@ -329,12 +329,23 @@ Only `isInstalledApp()` (`src/web/pwa/environment.ts`: `isStandalone() &&
 below 900px. A browser tab, the Telegram Mini App and the wide layout keep the
 plain frame. The Layout override adds `.web-shell--app` and:
 
-- **Top bar**: logo, then `src/web/appShell/AppTopActions.tsx` (bell, avatar),
-  then the menu button; the drawer still opens from it. The bell's count is
+- **No burger, no drawer** below 900px (owner, 2026-11-09): the bar,
+  «More» and the account sheet hold everything the drawer offers;
+  `tests/appShell.test.tsx` ("nothing the drawer offers is out of reach")
+  renders the real Sidebar with its account menu next to the app's UI, per
+  role, and fails on any drawer action the app lacks. The drawer element
+  stays mounted (from 900px it IS the sidebar); web.css hides it below.
+- **Top bar**: logo, then `src/web/appShell/AppTopActions.tsx` (bell, avatar). The bell's count is
   `useNotifications().unreadCount`, the side menu's own badge source (no
   second poller), and links to `#/notifications`. The avatar is initials
   (`initialsOf`) or a person icon: `AuthUser` has **no photo field**; a
-  photo needs a backend field first. It opens the panel's `ProfileModal`.
+  photo needs a backend field first. It opens the «Аккаунт» sheet (`AccountSheet.tsx`, a `WebSheet`): name,
+  email and role; Profile (`ProfileModal`); switch account where the
+  Sidebar offers it (owner, manager), with the panel's `AccountSwitchPanel` /
+  `AccountSwitchModal` wired as `UserMenu` wires them; Settings only if the
+  bar and «More» lack it (it is a required entry, so normally hidden); Sign
+  out = `useAuth().logout()`, the Sidebar button's own call, which reaches
+  `forgetPushOnSignOut` through the `@/api/auth` override.
 - **Bottom bar** `src/web/appShell/AppTabBar.tsx`: the side menu's entries
   from `useSideMenu()` (`src/web/appShell/sideMenu.ts`), the Sidebar's own
   pipeline (`menuSpecsFor` → `withStaffMenu` → `sortedNavItems` →
