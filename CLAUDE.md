@@ -24,7 +24,7 @@ fetch-panel`) for how its screens work, and the backend's for the API.
   | `@/api/auth` | sign in/out through `/owner-web/session/*`; the desktop's `/session/logout` deletes EVERY token of the user, the desktop's included |
   | `@/infrastructure/KeyValueStore` | web: everything in `localStorage`, so a sign-in survives closing the browser (bounded by the server's 30-day lifetime / 14-day idle); Telegram: the session in `sessionStorage` |
   | `@/components/Layout` | a shell that works from 360px: below 900px a 52px top bar with the logo on the LEFT and the menu button on the RIGHT, and a drawer that slides in from the right; mounts every notifier the desktop shell mounts, and above the screen the same `PageTopBar` (back button + docked heading), `UnsavedInterfaceNotice` and `NewInterfacesOffer` (since panel.ref 61f0e72 = v1.0.54; the bar's side-menu toggle renders nothing without the desktop's `AppShell`). When bumping `panel.ref`, diff the panel's `src/components/Layout.tsx` since the old pin and mirror what it mounts (`tests/layout.test.tsx`). "Telegram" is a card in the menu (panel Sidebar's `footerExtra` slot, `src/web/TelegramMenuEntry.tsx`), for an owner in a browser only; no top-bar or corner button. In the installed app (not Telegram) also the bell, avatar and bottom bar: see "Installed app: the phone shell" |
-  | `@/routes/Login` | the desktop's sign-in pieces incl. the forgot-password flip (`#/forgot-password`); a language pill hands the choice to the next account (`notePreLoginChoice`); in Telegram it says "reopen from the bot" |
+  | `@/routes/Login` | the desktop's sign-in pieces incl. the forgot-password face (`#/forgot-password`); a language pill hands the choice to the next account (`notePreLoginChoice`); in Telegram it says "reopen from the bot". Still since 2026-11-13: no scene, no ring, the faces swap at once (see "Static sign-in") |
   | `@/i18n/languagePreference` | the account's language is ALSO kept on the server (`GET/PUT /user/locale`), so it is asked once per account — never again on another device or after Telegram wipes its storage; before any choice the sign-in opens in Telegram's / the browser's language |
   | `@/routes/ResetPassword` | the mailed reset link's screen: no token field, the secret dropped from the URL, one way forward from a dead link. Opened from an INVITATION (`&purpose=invite`, a new owner's or manager's first password, 2026-09-30) it says "set your password" and welcomes them, without the sign-out-everywhere note. `main.tsx` renders it STANDALONE when opened on `#/reset-password` — signed in or not — because the panel's signed-in routes would send the link to the dashboard |
   | `@/telemetry/TelemetryTracker` | desktop telemetry must not count web traffic |
@@ -191,6 +191,31 @@ by alias (changed 2026-09-30); a relative import cannot be overridden here.
   - Needs a pinned `panel.ref` that contains these components.
 - Tests: `tests/login.test.tsx` ("the sign-in guard"), `tests/auth.test.ts`.
 - **Sign-in errors follow a language switch** (2026-10-07): `src/overrides/Login.tsx` keeps the error as the panel's `LocalizedText` (`@/i18n/localizedText`) and renders it at render time — panel keys via `t`, `web.*` keys via `tw`. Server refusal codes with web wording live in `src/web/i18n.ts` as `web.refusal.<code>` (`webRefusalKeyFor`; same text as the backend's `response.client-access.*`); a code without one keeps the server's sentence. Tests: `tests/login.language.test.tsx`.
+
+## Static sign-in (2026-11-13)
+
+The owner asked for a sign-in with no animation, a beautiful background and no
+freeze while it loads; the panel did it (panel `CLAUDE.md`, "Static sign-in").
+Here: `src/overrides/Login.tsx` and `ResetPassword.tsx` no longer mount the
+panel's `LoginScene` (three.js) or `HudBackdrop` (both deleted in the panel),
+`SceneGuard` and the reduced-motion check went with them, and a swap of the
+card's faces moves focus to the first field of the face now showing, as on the
+desktop. `three`, `@react-three/fiber` and `@types/three` are uninstalled
+(`check-deps` still passes against both the old and the new panel lockfile).
+The background, the stillness and the instant swap are the PANEL's CSS: they
+reach this app only with a `panel.ref` bump to the panel commit that has them.
+**Ship this change together with that bump.** Against the old pin it still
+builds and its tests pass, but the old CSS still flies the form in and keeps
+the ring's empty space above the wordmark.
+
+Tests: `tests/loginStatic.test.tsx` (the import graph of both overrides,
+through this app's aliases, reaches no three.js; no canvas/scene/ring; the
+swap's inert + focus both ways). Verified against the panel working tree by
+copying it into `vendor/panel` (tracked + untracked files, as the tarball
+would carry them, stamped with the current `panel.ref` so `fetch-panel` leaves
+it alone), then restoring `vendor/panel` from a tar backup, checked
+file-by-file with sha256. `PANEL_SRC` (a symlink) was not used: the panel's
+files would resolve their packages from the panel's own `node_modules`.
 
 ## Address block (2026-10-01)
 
