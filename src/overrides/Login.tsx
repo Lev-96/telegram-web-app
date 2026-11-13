@@ -174,8 +174,9 @@ const Login = () => {
       </div>
 
       <div className="login-stage">
-        <h1 className="login-brand">Cyber Place</h1>
+        {/* The mark first, the wordmark under it (the panel's order, 2026-11-13). */}
         <img className="login-logo" src="./logo.png" alt="" />
+        <h1 className="login-brand">Cyber Place</h1>
         <h2 className="login-title">
           {telegram ? tw("web.telegram.title") : face === "forgot" ? t("auth.forgotTitle") : tw("web.signIn.title")}
         </h2>

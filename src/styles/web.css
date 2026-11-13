@@ -838,17 +838,23 @@
 }
 
 /* ── sign-in, forgot and reset: a form a thumb can use ────────────────── */
-/* The desktop sizes the form from the ring (68% of it), which on a phone,
+/* The desktop sizes the form from the ring (78% of it), which on a phone,
    or on any screen with the keyboard up, is a 177–225px form with the
    placeholder cut off and "Send link" on two lines. The form keeps the
-   ring's size where that is larger and never drops under 320px (or the
+   ring's size where that is larger and never drops under 360px (or the
    screen). */
 .login-shell.web-login .login-stage {
-  max-width: max(calc(var(--ring-size) * 0.84), min(360px, 100%));
+  max-width: max(calc(var(--ring-size) * 0.92), min(380px, 100%));
 }
 
 .login-shell.web-login .login-flip > * {
-  max-width: max(calc(var(--ring-size) * 0.68), min(320px, 100%));
+  max-width: max(calc(var(--ring-size) * 0.78), min(360px, 100%));
+}
+
+/* The sign-in button keeps the panel's bigger size (2026-11-13): the touch
+   rule's 40px floor (:root[data-shell] .btn) would otherwise win here. */
+.login-shell.web-login .login-card .btn {
+  min-height: clamp(46px, calc(var(--ring-size) * 0.077), 48px);
 }
 
 /* The reset screen's "Back to sign in" is a .login-forgot <button> without
@@ -1064,9 +1070,10 @@
     font-size: 15px;
   }
 
-  /* 62px: the wide 1.64:1 mark (2026-10-17) at the area the old 52px one had. */
+  /* 76px: the wide 1.64:1 mark, a size up with the wordmark under it
+     (2026-11-13; it was 62px, the old square mark's area). */
   .login-shell.web-login .login-logo {
-    width: 62px;
+    width: 76px;
   }
 }
 

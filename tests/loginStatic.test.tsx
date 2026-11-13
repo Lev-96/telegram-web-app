@@ -83,6 +83,13 @@ describe("the web sign-in screens load no 3D", () => {
     expect(container.querySelector("canvas, .login-scene, .login-hud")).toBeNull();
     expect(container.querySelector(".login-shell.web-login h1.login-brand")).not.toBeNull();
   });
+
+  // The panel's order since 2026-11-13: the mark on top, the wordmark under it.
+  it("puts the mark first, the wordmark under it", () => {
+    const { container } = render(<MemoryRouter initialEntries={["/login"]}><Login /></MemoryRouter>);
+    const stage = container.querySelector(".login-stage") as HTMLElement;
+    expect([...stage.children].slice(0, 3).map((el) => el.className)).toEqual(["login-logo", "login-brand", "login-title"]);
+  });
 });
 
 describe("the forgot face swaps in at once", () => {

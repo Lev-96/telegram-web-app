@@ -37,6 +37,12 @@ describe("the web reset screen", () => {
     expect(isResetLink("#/login")).toBe(false);
   });
 
+  it("puts the mark first, the wordmark under it (the panel's order, 2026-11-13)", () => {
+    const { container } = render(<ResetPassword />);
+    const stage = container.querySelector(".login-stage") as HTMLElement;
+    expect([...stage.children].slice(0, 3).map((el) => el.className)).toEqual(["login-logo", "login-brand", "login-title"]);
+  });
+
   it("takes the secret from the link, removes it from the address bar and shows no token field", () => {
     const { container } = render(<ResetPassword />);
     expect(window.location.hash).toBe("#/reset-password");
