@@ -225,8 +225,11 @@ When the backend answers `ip_blocked` / `country_blocked`, the panel's `NetworkB
 
 The logo comes from the panel's `public/logo.png` at `panel.ref`; the new wide
 mark appears here when `panel.ref` is bumped to a panel commit that has it.
-`.login-shell.web-login .login-logo` is 62px on phones (the old square mark's
-area). Tab and home-screen icons are square files in `src/web/icons/`
+`.login-shell.web-login .login-logo` is 76px on phones (62px until
+2026-11-13, when the mark moved above the wordmark and grew — the panel's
+order, mirrored in both overrides, tested in `tests/loginStatic.test.tsx` and
+`tests/resetPassword.test.tsx`; the form's floor went 320 → 360px, and the
+sign-in button keeps 46–48px over the touch rule's 40px). Tab and home-screen icons are square files in `src/web/icons/`
 (linked from `index.html`, bundled by Vite into `/assets/`); they used to be
 the wide `logo.png`.
 
