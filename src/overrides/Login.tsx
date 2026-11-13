@@ -1,12 +1,12 @@
 /**
  * The panel's `@/routes/Login` for the web.
  *
- * Built from the desktop's own sign-in pieces — the WebGL space scene, the HUD
- * ring around the wordmark, the email field that remembers addresses, the
- * password field, the language pills and every `login-*` style — so the web
- * greets an owner exactly as the desktop does — including the card that turns
- * over to "forgot password" (the panel's own ForgotPasswordForm; the link it
- * mails opens this web app's reset screen, 2026-09-29). Two things differ:
+ * Built from the desktop's own sign-in pieces — the still space background (the
+ * panel's `.login-shell` CSS, 2026-11-13), the email field that remembers
+ * addresses, the password field, the language pills and every `login-*` style
+ * — so the web greets an owner exactly as the desktop does — including the
+ * card's "forgot password" face (the panel's own ForgotPasswordForm; the link
+ * it mails opens this web app's reset screen, 2026-09-29). Two things differ:
  *
  *   - a language picked here is handed to the account that signs in next, so
  *     it is not asked the same question again seconds later;
@@ -19,16 +19,14 @@
  *     password?", then a lock counted down from the server's own seconds
  *     (the panel's LoginHold) — this screen decides nothing, the server does.
  *
- * The scene is decoration and is treated as such: skipped when the viewer
- * asks for reduced motion, and if WebGL is unavailable it quietly leaves the
- * CSS backdrop, which already looks finished, and never takes the form down.
+ * Nothing on this screen moves (owner, 2026-11-13): the three.js scene, the
+ * HUD ring and the card's 3D turn are gone; the faces swap at once.
  */
 import { blockingKeyOf } from "@/api/blockingErrors";
 import type { ApiError } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { recentEmails } from "@/auth/recentEmails";
 import ForgotPasswordForm from "@/components/login/ForgotPasswordForm";
-import HudBackdrop from "@/components/login/HudBackdrop";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import PasswordInput from "@/components/ui/PasswordInput";
@@ -42,29 +40,12 @@ import { LocalizedText, renderText, textKey, textLiteral } from "@/i18n/localize
 import { useLoginCaptcha } from "@/auth/useLoginCaptcha";
 import CaptchaDialog from "@/components/login/CaptchaDialog";
 import LoginHold, { HoldKind } from "@/components/login/LoginHold";
-import { Component, FormEvent, lazy, ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
-// Same split as the desktop: three.js arrives after the form.
-const LoginScene = lazy(() => import("@/components/login/LoginScene"));
 
 const LANG_LABEL: Record<string, string> = { en: "ENG", ru: "РУС", am: "ՀԱՅ" };
 
 const inTelegram = () => document.documentElement.dataset.shell === "telegram";
-
-const prefersReducedMotion = () =>
-  typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-/** A scene that cannot start (no WebGL, lost context) removes itself. */
-class SceneGuard extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
 
 /** Which face of the card is showing. */
 type Face = "login" | "forgot";
@@ -84,7 +65,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   // The URL decides the face, as on the desktop: #/forgot-password opens the
-  // card already turned.
+  // card on its forgot face.
   const face: Face = pathname === "/forgot-password" ? "forgot" : "login";
   const flipTo = (next: Face) => navigate(next === "forgot" ? "/forgot-password" : "/login", { replace: true });
   const [email, setEmail] = useState("");
@@ -101,12 +82,22 @@ const Login = () => {
   const [hold, setHold] = useState<Hold | null>(null);
   const [holdOver, setHoldOver] = useState(false);
   const [known, setKnown] = useState<string[]>([]);
-  const [motion] = useState(() => !prefersReducedMotion());
   const telegram = inTelegram();
 
   useEffect(() => {
     if (!telegram) void recentEmails.list().then(setKnown);
   }, [telegram]);
+
+  // As on the desktop: a swap moves focus onto the first field of the face
+  // now showing (the pressed link sits on the face just hidden, which is
+  // inert). Not on the first render: the fields' `autoFocus` covers that.
+  const backFace = useRef<HTMLDivElement>(null);
+  const firstFace = useRef(true);
+  useEffect(() => {
+    if (firstFace.current) { firstFace.current = false; return; }
+    if (face === "login") emailRef.current?.focus();
+    else backFace.current?.querySelector<HTMLInputElement>("input")?.focus();
+  }, [face]);
 
   const pickLang = (code: Lang) => {
     notePreLoginChoice(code);
@@ -167,14 +158,6 @@ const Login = () => {
 
   return (
     <div className="login-shell web-login">
-      {motion && (
-        <SceneGuard>
-          <Suspense fallback={null}>
-            <LoginScene />
-          </Suspense>
-        </SceneGuard>
-      )}
-
       <div className="login-lang" role="group" aria-label="Language">
         {LANGUAGES.map((l) => (
           <button
@@ -191,10 +174,7 @@ const Login = () => {
       </div>
 
       <div className="login-stage">
-        <div className="login-brand-wrap">
-          <HudBackdrop />
-          <h1 className="login-brand">Cyber Place</h1>
-        </div>
+        <h1 className="login-brand">Cyber Place</h1>
         <img className="login-logo" src="./logo.png" alt="" />
         <h2 className="login-title">
           {telegram ? tw("web.telegram.title") : face === "forgot" ? t("auth.forgotTitle") : tw("web.signIn.title")}
@@ -277,8 +257,8 @@ const Login = () => {
 
               <CaptchaDialog open={captcha.open} client="owner_web" onSolved={captcha.solved} onClose={captcha.close} />
 
-              {/* The reverse face; `inert` keeps the hidden side out of the tab order. */}
-              <div className="login-flip-face-back" inert={face === "login" || undefined}>
+              {/* The other face; `inert` keeps the hidden side out of the tab order. */}
+              <div ref={backFace} className="login-flip-face-back" inert={face === "login" || undefined}>
                 <ForgotPasswordForm onBack={() => flipTo("login")} autoFocus={face === "forgot"} />
               </div>
             </div>

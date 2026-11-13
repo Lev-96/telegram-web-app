@@ -609,7 +609,8 @@
  *   - the screen scrolls when the form cannot fit, and is centred with auto
  *     margins, so a tall form starts at the top instead of being cut off at
  *     both ends (flex centring would clip the top out of reach);
- *   - the backdrop stays put while the form scrolls over it.
+ *   - the background stays put while the form scrolls over it (it belongs
+ *     to the scrolling shell itself, which does not move its own background).
  * The desktop's own rules are untouched: everything here is under .web-login.
  */
 .login-shell.web-login {
@@ -627,11 +628,6 @@
 .login-shell.web-login .login-stage {
   margin-block: auto;
   flex-shrink: 0;
-}
-
-.login-shell.web-login .login-scene {
-  position: fixed;
-  inset: 0;
 }
 
 .login-shell.web-login .login-lang {

@@ -28,7 +28,6 @@
 import { apiResetPassword } from "@/api/auth";
 import { AppConfig } from "@/infrastructure/AppConfig";
 import { keyValueStore } from "@/infrastructure/KeyValueStore";
-import HudBackdrop from "@/components/login/HudBackdrop";
 import Button from "@/components/ui/Button";
 import PasswordInput from "@/components/ui/PasswordInput";
 import { useLang } from "@/i18n/LanguageContext";
@@ -108,10 +107,7 @@ const ResetPassword = () => {
   return (
     <div className="login-shell web-login">
       <div className="login-stage">
-        <div className="login-brand-wrap">
-          <HudBackdrop />
-          <h1 className="login-brand">Cyber Place</h1>
-        </div>
+        <h1 className="login-brand">Cyber Place</h1>
         <img className="login-logo" src="./logo.png" alt="" />
         <h2 className="login-title">{invite ? tw("web.invite.title") : t("auth.resetTitle")}</h2>
 
