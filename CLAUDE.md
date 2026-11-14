@@ -192,6 +192,13 @@ by alias (changed 2026-09-30); a relative import cannot be overridden here.
 - Tests: `tests/login.test.tsx` ("the sign-in guard"), `tests/auth.test.ts`.
 - **Sign-in errors follow a language switch** (2026-10-07): `src/overrides/Login.tsx` keeps the error as the panel's `LocalizedText` (`@/i18n/localizedText`) and renders it at render time — panel keys via `t`, `web.*` keys via `tw`. Server refusal codes with web wording live in `src/web/i18n.ts` as `web.refusal.<code>` (`webRefusalKeyFor`; same text as the backend's `response.client-access.*`); a code without one keeps the server's sentence. Tests: `tests/login.language.test.tsx`.
 
+- **No raw network errors (audit B8, 2026-11-14):** Login, ResetPassword and
+  TelegramGate map a network failure (`classifyError(err) === "offline"` from
+  the panel's `@/components/ui/state/viewState`) to the web key `web.offline`
+  («Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.»), stored
+  as a text key so a language switch re-translates it. ResetPassword keeps
+  the form on a network failure; it no longer treats the link as dead.
+
 ## Static sign-in (2026-11-13)
 
 The owner asked for a sign-in with no animation, a beautiful background and no
@@ -351,6 +358,13 @@ nothing is overridden here. On phones `.web-shell .card` (12px padding, above)
 still wins over the card's own padding.
 
 ## Installed app: the phone shell (2026-11-09)
+
+- **Tab-bar labels (audit B10, 2026-11-14):** each slot has 6px side padding
+  (a 12px minimum gap between labels), `text-wrap: balance`, `hyphens: none`,
+  `overflow-wrap: break-word` (a word breaks only when it alone is wider than
+  its slot), and `container-type: inline-size`. Armenian is sized by
+  `<nav data-lang>`: `clamp(9px, 11.5cqi, 10px)`. Checked at 360/390/430 in
+  en/ru/am for owner and manager.
 
 Only `isInstalledApp()` (`src/web/pwa/environment.ts`: `isStandalone() &&
 !isTelegramMiniApp()`, also what `PhoneNotificationsProvider` uses) and only
