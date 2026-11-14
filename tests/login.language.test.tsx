@@ -90,6 +90,31 @@ describe("a web sign-in error follows the language switch", () => {
     expect(alertText()).toBe(t("login.invalidCredentials", "en"));
   });
 
+  // B8 (audit 2026-11-13): a request that got no answer threw fetch's own
+  // TypeError and the card showed the browser's "Failed to fetch" in every
+  // language (Safari: "Load failed"). It is the panel's `classifyError`
+  // "offline" and reads as one sentence of ours.
+  it.each([
+    ["Chromium", "Failed to fetch"],
+    ["Safari", "Load failed"],
+    ["Firefox", "NetworkError when attempting to fetch resource."],
+  ])("no answer from the server (%s) is said in our words, never the browser's", async (_browser, raw) => {
+    const shown = await signInFailing(new TypeError(raw));
+    expect(shown).toBe(webText("web.offline", "ru"));
+    expect(shown).toBe("Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.");
+
+    switchTo("English");
+    expect(alertText()).toBe(webText("web.offline", "en"));
+    switchTo("Հայերեն");
+    expect(alertText()).toBe(webText("web.offline", "am"));
+    expect(alertText()).not.toContain(raw);
+  });
+
+  it("an error of our own code (no status, not a TypeError) is not called a lost connection", async () => {
+    const shown = await signInFailing(new Error("boom"));
+    expect(shown).not.toBe(webText("web.offline", "ru"));
+  });
+
   it("a code this build has no words for keeps the server's sentence", async () => {
     expect(await signInFailing(fail(403, { message: "Новый отказ", code: "something_new" }, "Новый отказ"))).toBe("Новый отказ");
 

@@ -187,6 +187,17 @@ describe("bottom navigation: the side menu's own entries", () => {
     expect(splitTabs([1, 2, 3, 4, 5], 3)).toEqual({ tabs: [1, 2, 3], more: [4, 5] });
   });
 
+  // B10 (audit 2026-11-13): the bar's labels are sized by language (Armenian
+  // words are the longest), so the bar says which language it is in.
+  it("says its language, for the labels' size step", () => {
+    for (const lang of ["am", "ru", "en"] as const) {
+      state.lang = lang;
+      const view = mount(<AppTabBar />);
+      expect(view.container.querySelector("nav.web-tabbar")!.getAttribute("data-lang")).toBe(lang);
+      view.unmount();
+    }
+  });
+
   it("lights the menu's one current entry, and More for a page under the sheet", () => {
     let view = mount(<AppTabBar />, "/branches/5/sessions");
     const lit = view.container.querySelector(".web-tabbar__item.is-active");
@@ -471,6 +482,27 @@ describe("the shell's stylesheet", () => {
     const at = css.indexOf("The drawer when closed");
     expect(at).toBeGreaterThan(-1);
     expect(block(".web-shell:not(.is-drawer-open) .web-drawer .sidebar h1 span", at)).toMatch(/animation: none;/);
+  });
+
+  // B10 (audit 2026-11-13): in Armenian at 390 «Կառավարման էջ» ran on one line
+  // to 4px of its neighbour while «Իմ մասնաճյուղերը» wrapped. Measured in a
+  // browser at 360/390/430 in en/ru/am (CLAUDE.md, "Installed app"); these keep
+  // the rules that made it read cleanly.
+  it("tab labels keep 12px clear between neighbours, wrap balanced between words, never hyphenated", () => {
+    const item = block(".web-tabbar__item");
+    expect(item).toMatch(/padding: 8px 6px 6px;/);
+    expect(item).toMatch(/min-height: 56px;/);
+    expect(item).toMatch(/container-type: inline-size;/);
+    const label = block(".web-tabbar__label");
+    expect(label).toMatch(/text-wrap: balance;/);
+    expect(label).toMatch(/hyphens: none;/);
+    // Broken inside a word only when that word alone is wider than the slot.
+    expect(label).toMatch(/overflow-wrap: break-word;/);
+    expect(label).not.toMatch(/overflow-wrap: anywhere;/);
+  });
+
+  it("Armenian labels step down to fit their longest word in the slot, never below 9px", () => {
+    expect(block('.web-tabbar[data-lang="am"] .web-tabbar__label')).toMatch(/font-size: clamp\(9px, 11\.5cqi, 10px\);/);
   });
 
   it("reduced motion stops the light strip, the tap dip and the sheet rows", () => {

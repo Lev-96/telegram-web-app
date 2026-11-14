@@ -167,6 +167,13 @@ export const WEB_TEXT = {
 
   "web.tg.signingIn": { en: "Signing in with Telegram…", ru: "Вход через Telegram…", am: "Մուտք Telegram-ով…" },
   "web.tg.linking": { en: "Linking your Telegram…", ru: "Привязываем Telegram…", am: "Կապում ենք Telegram-ը…" },
+  // A request that got no answer (the panel's `classifyError` → "offline"):
+  // fetch's own "Failed to fetch" / "Load failed" is never shown (B8, 2026-11-14).
+  "web.offline": {
+    en: "No connection to the server. Check your internet and try again.",
+    ru: "Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.",
+    am: "Սերվերի հետ կապ չկա։ Ստուգեք ինտերնետը և նորից փորձեք։",
+  },
   // The server's refusals of a web sign-in, said by their `code` so the
   // sentence follows a language switch (2026-10-07). Same wording as the
   // backend's `response.client-access.*`.

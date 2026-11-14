@@ -25,6 +25,7 @@
 import { blockingKeyOf } from "@/api/blockingErrors";
 import type { ApiError } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
+import { classifyError } from "@/components/ui/state/viewState";
 import { recentEmails } from "@/auth/recentEmails";
 import ForgotPasswordForm from "@/components/login/ForgotPasswordForm";
 import Button from "@/components/ui/Button";
@@ -141,6 +142,8 @@ const Login = () => {
       else if (refusalKey) setError(textKey(refusalKey));
       else if (code && err instanceof Error) setError(textLiteral(err.message));
       else if (status === 401 || status === 422) setError(textKey("login.invalidCredentials"));
+      // No answer at all: our sentence, never the browser's "Failed to fetch".
+      else if (classifyError(err) === "offline") setError(textKey("web.offline"));
       else setError(err instanceof Error ? textLiteral(err.message) : textKey("login.failed"));
     } finally {
       setBusy(false);

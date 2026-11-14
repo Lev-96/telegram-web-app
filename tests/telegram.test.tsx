@@ -161,6 +161,19 @@ describe("the Telegram gate", () => {
     expect(screen.queryByText("panel")).toBeNull();
   });
 
+  // B8: no answer from the server showed fetch's "Failed to fetch".
+  it("no answer from the server: our sentence, never the browser's", async () => {
+    requests.next = new TypeError("Failed to fetch");
+    render(
+      <TelegramGate launch={launch()}>
+        <p>panel</p>
+      </TelegramGate>,
+    );
+    await waitFor(() => expect(screen.getByText("No connection to the server. Check your internet and try again.")).toBeTruthy());
+    expect(screen.queryByText(/Failed to fetch/)).toBeNull();
+    expect(screen.queryByText("panel")).toBeNull();
+  });
+
   it("a blocked address gets the block screen, not a generic refusal (2026-10-01)", async () => {
     requests.next = Object.assign(new Error("You have been blocked."), { status: 403, body: { code: "access_blocked" } });
     render(

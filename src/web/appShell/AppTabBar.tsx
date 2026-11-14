@@ -45,7 +45,7 @@ interface Props {
 const AppTabBar = ({ footerExtra }: Props) => {
   const menu = useSideMenu();
   const tw = useWebText();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { pathname } = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
   const { tabs, more } = splitTabs(menu.entries);
@@ -68,6 +68,7 @@ const AppTabBar = ({ footerExtra }: Props) => {
       <nav
         className="web-tabbar"
         aria-label={tw("web.shell.sections")}
+        data-lang={lang}
         style={{ "--tab-count": slots, "--tab-index": Math.max(lit, 0) } as CSSProperties}
       >
         <span className={`web-tabbar__light${lit < 0 ? " is-off" : ""}`} aria-hidden="true" />
