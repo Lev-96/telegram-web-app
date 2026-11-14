@@ -28,9 +28,9 @@
 import { apiResetPassword } from "@/api/auth";
 import { AppConfig } from "@/infrastructure/AppConfig";
 import { keyValueStore } from "@/infrastructure/KeyValueStore";
-import HudBackdrop from "@/components/login/HudBackdrop";
 import Button from "@/components/ui/Button";
 import PasswordInput from "@/components/ui/PasswordInput";
+import { classifyError } from "@/components/ui/state/viewState";
 import { useLang } from "@/i18n/LanguageContext";
 import { useWebText } from "@web/web/i18n";
 import { FormEvent, useState } from "react";
@@ -38,7 +38,11 @@ import { FormEvent, useState } from "react";
 /** The backend's rule (PasswordResetRequest: min:8). */
 const MIN_LENGTH = 8;
 
-type Outcome = { kind: "done" } | { kind: "failed"; message: string } | null;
+/**
+ * `offline`: no answer from the server. The link was not spent, so the form
+ * stays for another try (only a server's refusal makes the link unusable).
+ */
+type Outcome = { kind: "done" } | { kind: "failed"; message: string } | { kind: "offline" } | null;
 
 export const RESET_ROUTE = "#/reset-password";
 
@@ -97,7 +101,8 @@ const ResetPassword = () => {
       await keyValueStore.remove(AppConfig.storageKeys.user);
       setOutcome({ kind: "done" });
     } catch (ex) {
-      setOutcome({ kind: "failed", message: ex instanceof Error ? ex.message : t("form.errors.failed") });
+      if (classifyError(ex) === "offline") setOutcome({ kind: "offline" });
+      else setOutcome({ kind: "failed", message: ex instanceof Error ? ex.message : t("form.errors.failed") });
     } finally {
       setBusy(false);
     }
@@ -108,11 +113,9 @@ const ResetPassword = () => {
   return (
     <div className="login-shell web-login">
       <div className="login-stage">
-        <div className="login-brand-wrap">
-          <HudBackdrop />
-          <h1 className="login-brand">Cyber Place</h1>
-        </div>
+        {/* The mark first, the wordmark under it (the panel's order, 2026-11-13). */}
         <img className="login-logo" src="./logo.png" alt="" />
+        <h1 className="login-brand">Cyber Place</h1>
         <h2 className="login-title">{invite ? tw("web.invite.title") : t("auth.resetTitle")}</h2>
 
         {outcome?.kind === "done" ? (
@@ -154,9 +157,13 @@ const ResetPassword = () => {
               minLength={MIN_LENGTH}
               required
             />
-            {mismatch && (
+            {mismatch ? (
               <div className="error web-login__error" role="alert">
                 {t("settings.passwordsMismatch")}
+              </div>
+            ) : outcome?.kind === "offline" && (
+              <div className="error web-login__error" role="alert">
+                {tw("web.offline")}
               </div>
             )}
             <Button disabled={busy || pw.length < MIN_LENGTH || pw2 === ""}>

@@ -13,11 +13,31 @@
  * Telegram's narrow view. In a browser an owner's menu also carries a
  * "Telegram" card (Sidebar's footer slot): one tap opens the Mini App in
  * Telegram, signed in. A manager never has Telegram, and inside Telegram it
- * would be circular.
+ * would be circular. Below it, the installable app's card (PhoneAppMenuEntry):
+ * install, or in the installed app the phone-notifications switch.
+ *
+ * Phone notifications (2026-11-09) run ONCE here, around the shell and outside
+ * the Sidebar (PhoneNotificationsProvider), so they work while the drawer is
+ * closed. On top of the screen: the installed app's first-launch «Включите
+ * уведомления» sheet, and in a phone's browser tab the install banner (the
+ * menu is off-canvas there). Both are keyed by the account: a different
+ * sign-in starts them afresh.
+ *
+ * The installed app outside Telegram (2026-11-09) is a phone shell: the top
+ * bar also carries the notifications bell and the person's avatar, and a
+ * bottom bar holds the side menu's entries (AppTabBar, the Sidebar's own
+ * pipeline) with «More» for the rest. A browser tab and Telegram keep the
+ * plain frame. Both bars are below every dialog (50).
+ *
+ * No burger and no drawer there (owner, 2026-11-09): the bar, «More» and the
+ * avatar's «Аккаунт» sheet hold everything the drawer offers
+ * (tests/appShell.test.tsx renders both and checks). From 900px the drawer
+ * element is the sidebar, so it stays mounted; below that web.css hides it.
  */
 import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderNotifier";
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
 import SessionEndingNotifier from "@/components/notifications/SessionEndingNotifier";
+import BillingNoticeNotifier from "@/components/notifications/BillingNoticeNotifier";
 import SupportNotifier from "@/components/notifications/SupportNotifier";
 import NewInterfacesOffer from "@/components/appearance/NewInterfacesOffer";
 import UnsavedInterfaceNotice from "@/components/appearance/UnsavedInterfaceNotice";
@@ -26,6 +46,13 @@ import Sidebar from "@/components/Sidebar";
 import PageTopBar from "@/components/ui/PageTopBar";
 import { useAuth } from "@/auth/AuthContext";
 import { Ps5ControlProvider } from "@/ps5/Ps5ControlProvider";
+import InstallBanner from "@web/web/InstallBanner";
+import PhoneAppMenuEntry from "@web/web/PhoneAppMenuEntry";
+import PhoneNotificationsPrompt from "@web/web/PhoneNotificationsPrompt";
+import { PhoneNotificationsProvider } from "@web/web/pwa/PhoneNotificationsContext";
+import { isInstalledApp } from "@web/web/pwa/environment";
+import AppTabBar from "@web/web/appShell/AppTabBar";
+import AppTopActions from "@web/web/appShell/AppTopActions";
 import TelegramMenuEntry from "@web/web/TelegramMenuEntry";
 import { useWebText } from "@web/web/i18n";
 import { useEffect, useState } from "react";
@@ -33,11 +60,14 @@ import { Outlet, useLocation } from "react-router-dom";
 
 const inTelegram = () => document.documentElement.dataset.shell === "telegram";
 
+
 const Layout = () => {
   const tw = useWebText();
   const { user } = useAuth();
   const location = useLocation();
   const [drawer, setDrawer] = useState(false);
+  // Where the page runs does not change while it is open.
+  const [appShell] = useState(isInstalledApp);
 
   // A menu item was chosen: the drawer has done its job.
   useEffect(() => setDrawer(false), [location.pathname]);
@@ -52,52 +82,75 @@ const Layout = () => {
   // Telegram access is an owner's (the server grants it to no other role).
   const offersTelegram = !inTelegram() && user?.role === "company_owner";
 
+  // The menu's footer cards: in the drawer, and in the app's «More» sheet.
+  const menuCards = (
+    <>
+      {offersTelegram && <TelegramMenuEntry onNavigate={() => setDrawer(false)} />}
+      {/* Install the app / phone notifications (2026-11-09); in Telegram, a note that notices come from the bot. */}
+      <PhoneAppMenuEntry />
+    </>
+  );
+
   return (
     <Ps5ControlProvider>
-      <div className={`app-shell web-shell${drawer ? " is-drawer-open" : ""}`}>
-        <header className="web-topbar">
-          <img className="web-topbar__logo" src="./logo.png" alt="Cyber Place" />
-          <button
-            type="button"
-            className="web-topbar__menu"
-            aria-label={tw("web.menu")}
-            aria-expanded={drawer}
-            onClick={() => setDrawer((v) => !v)}
-          >
-            <span aria-hidden="true" />
-            <span aria-hidden="true" />
-            <span aria-hidden="true" />
-          </button>
-        </header>
-        <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />
-        <div className="web-drawer">
-          <Sidebar footerExtra={offersTelegram ? <TelegramMenuEntry onNavigate={() => setDrawer(false)} /> : undefined} />
+      <PhoneNotificationsProvider>
+        <div className={`app-shell web-shell${appShell ? " web-shell--app" : ""}${drawer ? " is-drawer-open" : ""}`}>
+          <header className="web-topbar">
+            <img className="web-topbar__logo" src="./logo.png" alt="Cyber Place" />
+            {appShell && <AppTopActions />}
+            {/* The installed app has no burger: the bottom bar, «More» and the
+                avatar's account sheet hold everything the drawer offers. */}
+            {!appShell && (
+              <button
+                type="button"
+                className="web-topbar__menu"
+                aria-label={tw("web.menu")}
+                aria-expanded={drawer}
+                onClick={() => setDrawer((v) => !v)}
+              >
+                <span aria-hidden="true" />
+                <span aria-hidden="true" />
+                <span aria-hidden="true" />
+              </button>
+            )}
+          </header>
+          {!appShell && <div className="web-drawer-backdrop" onClick={() => setDrawer(false)} aria-hidden="true" />}
+          {/* Kept in the installed app for a wide screen, where it is the
+              sidebar; below 900px web.css hides it there (no burger). */}
+          <div className="web-drawer">
+            <Sidebar footerExtra={menuCards} />
+          </div>
+          <main className="main">
+            {/* What the desktop shell mounts above every screen (panel
+                2026-10-26/27): the pinned top bar with the back button and the
+                screen's heading once it scrolls away, the unsaved-interface
+                notice and the new-interfaces offer. The bar's side-menu toggle
+                draws nothing here: it needs the desktop's AppShell, and the web
+                has its own drawer. */}
+            <PageTopBar />
+            <UnsavedInterfaceNotice />
+            <NewInterfacesOffer />
+            <Outlet />
+          </main>
+          {appShell && <AppTabBar footerExtra={menuCards} />}
+          {/* The notifiers' toasts place themselves (fixed, top-right, each at
+              its own offset). On the web they sit in one stack instead, so they
+              cover neither the top bar nor, on a phone, the page title: see
+              .web-notices in web.css. Their dialogs portal to <body> and are
+              not affected. */}
+          <div className="web-notices">
+            <GlobalBookingNotifier />
+            <SupportNotifier />
+            <SessionEndingNotifier />
+            {/* Mirrors the desktop Layout (2026-11-09): a platform payment notice rings. */}
+            <BillingNoticeNotifier />
+            <ExpenseReminderNotifier />
+          </div>
+          <UnexpectedWakeDialog />
+          <InstallBanner key={`banner-${user?.id ?? "none"}`} />
+          <PhoneNotificationsPrompt key={`push-${user?.id ?? "none"}`} />
         </div>
-        <main className="main">
-          {/* What the desktop shell mounts above every screen (panel
-              2026-10-26/27): the pinned top bar with the back button and the
-              screen's heading once it scrolls away, the unsaved-interface
-              notice and the new-interfaces offer. The bar's side-menu toggle
-              draws nothing here: it needs the desktop's AppShell, and the web
-              has its own drawer. */}
-          <PageTopBar />
-          <UnsavedInterfaceNotice />
-          <NewInterfacesOffer />
-          <Outlet />
-        </main>
-        {/* The notifiers' toasts place themselves (fixed, top-right, each at
-            its own offset). On the web they sit in one stack instead, so they
-            cover neither the top bar nor, on a phone, the page title: see
-            .web-notices in web.css. Their dialogs portal to <body> and are
-            not affected. */}
-        <div className="web-notices">
-          <GlobalBookingNotifier />
-          <SupportNotifier />
-          <SessionEndingNotifier />
-          <ExpenseReminderNotifier />
-        </div>
-        <UnexpectedWakeDialog />
-      </div>
+      </PhoneNotificationsProvider>
     </Ps5ControlProvider>
   );
 };

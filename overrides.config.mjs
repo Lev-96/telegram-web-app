@@ -13,8 +13,9 @@ export const overrides = {
   "@/infrastructure/KeyValueStore": "src/overrides/KeyValueStore.ts",
   // A shell that works from 360px up: the desktop's is a fixed 240px sidebar.
   "@/components/Layout": "src/overrides/Layout.tsx",
-  // A light sign-in screen (the desktop's carries a three.js scene), which in
-  // Telegram explains how to get back in instead of asking for a password.
+  // The desktop's sign-in screen for the web: a language picked here goes to
+  // the account that signs in next, and in Telegram it explains how to get
+  // back in instead of asking for a password.
   "@/routes/Login": "src/overrides/Login.tsx",
   // The reset screen the mailed link opens: no token field, the secret is
   // dropped from the address bar, one way forward from a dead link.

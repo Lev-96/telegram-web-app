@@ -1,6 +1,7 @@
 import { request } from "@/api/client";
 import NetworkBlockedScreen, { useNetworkBlock } from "@/components/NetworkBlockedScreen";
 import Button from "@/components/ui/Button";
+import { classifyError } from "@/components/ui/state/viewState";
 import Spinner from "@/components/ui/Spinner";
 import { AppConfig } from "@/infrastructure/AppConfig";
 import { keyValueStore } from "@/infrastructure/KeyValueStore";
@@ -8,7 +9,8 @@ import { useWebText } from "@web/web/i18n";
 import { ReactNode, useEffect, useState } from "react";
 import { errorMessage, TelegramLaunch } from "./telegram";
 
-type State = { kind: "working" } | { kind: "ready" } | { kind: "refused"; message: string | null };
+/** `offline`: no answer from the server (said in our words, never fetch's "Failed to fetch"). */
+type State = { kind: "working" } | { kind: "ready" } | { kind: "offline" } | { kind: "refused"; message: string | null };
 
 interface LoginResponse {
   login: { id: number; name: string; email: string; role: string };
@@ -78,7 +80,8 @@ const TelegramGate = ({ launch, children }: { launch: TelegramLaunch; children: 
     let current = true;
     exchangeLaunch(launch).then(
       () => current && setState({ kind: "ready" }),
-      (error: unknown) => current && setState({ kind: "refused", message: errorMessage(error) }),
+      (error: unknown) =>
+        current && setState(classifyError(error) === "offline" ? { kind: "offline" } : { kind: "refused", message: errorMessage(error) }),
     );
     return () => {
       current = false;
@@ -98,9 +101,9 @@ const TelegramGate = ({ launch, children }: { launch: TelegramLaunch; children: 
             <p className="muted">{launch.linkParam ? tw("web.tg.linking") : tw("web.tg.signingIn")}</p>
           </>
         )}
-        {state.kind === "refused" && (
+        {(state.kind === "refused" || state.kind === "offline") && (
           <>
-            <p>{state.message ?? tw("web.tg.reopen")}</p>
+            <p>{state.kind === "offline" ? tw("web.offline") : state.message ?? tw("web.tg.reopen")}</p>
             <Button variant="secondary" onClick={() => launch.webApp.close()}>
               {tw("web.close")}
             </Button>

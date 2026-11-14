@@ -7,10 +7,13 @@
  *                              owner's web grant; issues a web-only token
  *   /owner-web/session/logout  deletes THIS token only — the desktop's
  *                              /session/logout deletes every token the user
- *                              has, which would sign the desktop out too
+ *                              has, which would sign the desktop out too;
+ *                              first, this phone's push subscription is
+ *                              removed (web-push DELETE)
  */
 import { request } from "@/api/client";
 import { loginChallenge } from "@/auth/loginChallenge";
+import { forgetPushOnSignOut } from "@web/web/pwa/webPush";
 import type { LoginResult } from "../../vendor/panel/src/api/auth";
 
 export * from "../../vendor/panel/src/api/auth";
@@ -34,4 +37,12 @@ export const apiLogin = async (email: string, password: string): Promise<LoginRe
   };
 };
 
-export const apiLogout = () => request<{ messages?: string }>("/owner-web/session/logout", { method: "POST" });
+/**
+ * Signing out also disconnects this phone's notifications (2026-11-09), while
+ * the token still works: the account's notices must not keep arriving on a
+ * phone it left, and the next person turns them on for themselves.
+ */
+export const apiLogout = async () => {
+  await forgetPushOnSignOut();
+  return request<{ messages?: string }>("/owner-web/session/logout", { method: "POST" });
+};

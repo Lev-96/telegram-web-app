@@ -37,6 +37,12 @@ describe("the web reset screen", () => {
     expect(isResetLink("#/login")).toBe(false);
   });
 
+  it("puts the mark first, the wordmark under it (the panel's order, 2026-11-13)", () => {
+    const { container } = render(<ResetPassword />);
+    const stage = container.querySelector(".login-stage") as HTMLElement;
+    expect([...stage.children].slice(0, 3).map((el) => el.className)).toEqual(["login-logo", "login-brand", "login-title"]);
+  });
+
   it("takes the secret from the link, removes it from the address bar and shows no token field", () => {
     const { container } = render(<ResetPassword />);
     expect(window.location.hash).toBe("#/reset-password");
@@ -74,6 +80,24 @@ describe("the web reset screen", () => {
 
     expect((await screen.findByRole("alert")).textContent).toBe("Ссылка недействительна.");
     expect(screen.getByText("Отправить новую ссылку")).toBeTruthy();
+  });
+
+  // B8: no answer from the server is not a dead link. The browser's own
+  // "Failed to fetch" used to show, and the form was swapped for "send a new
+  // link" although the link was still good.
+  it("no answer from the server: our sentence, and the form stays for another try", async () => {
+    api.reset.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    const { container } = render(<ResetPassword />);
+    fill(container, "brand-new-pass");
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.");
+    expect(screen.queryByText("Отправить новую ссылку")).toBeNull();
+    expect(container.querySelectorAll('input[type="password"]')).toHaveLength(2);
+
+    api.reset.mockResolvedValueOnce({});
+    fill(container, "brand-new-pass");
+    await screen.findByRole("status");
+    expect(api.reset).toHaveBeenCalledTimes(2);
   });
 
   it("an invitation link: set-your-password wording, the purpose dropped from the address bar", async () => {

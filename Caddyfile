@@ -42,6 +42,14 @@
 	header @assets Cache-Control "public, max-age=31536000, immutable"
 	@entry path / /index.html
 	header @entry Cache-Control "no-cache"
+	# The service worker and the app manifest are fixed names: revalidated on
+	# every load too, so a new worker or icon set reaches installed phones.
+	@pwa path /sw.js /manifest.webmanifest
+	header @pwa Cache-Control "no-cache"
+	# Not every system's MIME table knows .webmanifest; file_server keeps a
+	# Content-Type that is already set.
+	@manifest path /manifest.webmanifest
+	header @manifest Content-Type "application/manifest+json"
 
 	# An allowlist, not a denylist, evaluated in exactly this order (route).
 	#   - only GET and HEAD: a static page takes no writes, so POST, PUT,
@@ -52,11 +60,16 @@
 	#     else — /.env, /.git, /wp-admin, *.php, /api/..., the source tree —
 	#     is 404 without touching the file system, and a missing asset is a
 	#     404 too, never the page in its place.
+	#   - every top-level name in dist/ must be listed (tests/caddyfile.test.ts
+	#     checks it against the panel's public/ and static/): /sounds/* was
+	#     missing until 2026-11-09, so every chosen melody 404'd and the panel
+	#     fell back to its default chime. /sw.js, /manifest.webmanifest and
+	#     /icons/* are the installable app (static/).
 	route {
 		@unsafe not method GET HEAD
 		respond @unsafe 405
 
-		@app path / /index.html /logo.png /assets/* /fonts/* /bg/*
+		@app path / /index.html /logo.png /assets/* /fonts/* /bg/* /sounds/* /sw.js /manifest.webmanifest /icons/*
 		file_server @app
 
 		respond 404

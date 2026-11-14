@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 import { overrides } from "./overrides.config.mjs";
+import { ownerWebStatic } from "./scripts/ownerWebStatic.mjs";
 
 const here = __dirname;
 const panel = path.resolve(here, "vendor/panel");
@@ -11,7 +12,9 @@ const pkg = JSON.parse(readFileSync(path.resolve(here, "package.json"), "utf8"))
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export default defineConfig({
-  plugins: [react()],
+  // static/: the owner web's own root files (PWA manifest, icons, service
+  // worker), copied into dist/ beside the panel's public files.
+  plugins: [react(), ownerWebStatic({ staticDir: path.resolve(here, "static"), publicDir: path.resolve(panel, "public") })],
   define: {
     // The panel's code reports a version; here it is this app's.
     __APP_VERSION__: JSON.stringify(pkg.version),
