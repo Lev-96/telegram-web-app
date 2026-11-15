@@ -26,7 +26,8 @@ vi.mock("@/components/Sidebar", () => ({
 }));
 vi.mock("@/components/notifications/ExpenseReminderNotifier", () => ({ default: () => null }));
 vi.mock("@/components/notifications/GlobalBookingNotifier", () => ({ default: () => null }));
-vi.mock("@/components/notifications/SessionEndingNotifier", () => ({ default: () => null }));
+vi.mock("@/components/notifications/SessionEndingNotifier", () => ({ default: () => <i data-testid="session-ending" /> }));
+vi.mock("@/components/notifications/SessionReminderNotifier", () => ({ default: () => <i data-testid="session-reminder" /> }));
 vi.mock("@/components/notifications/BillingNoticeNotifier", () => ({ default: () => null }));
 vi.mock("@/components/notifications/SupportNotifier", () => ({ default: () => null }));
 vi.mock("@/components/ps5/UnexpectedWakeDialog", () => ({ default: () => null }));
@@ -155,6 +156,14 @@ describe("what the desktop shell mounts above every screen (panel 2026-10-26/27)
   });
 });
 
+describe("the notifiers the desktop Layout mounts (panel 6a7987e)", () => {
+  it("rings a player's session reminder, right after the session-ending notifier", () => {
+    document.documentElement.dataset.shell = "web";
+    const { container } = mount();
+    const ids = Array.from(container.querySelectorAll(".web-notices > [data-testid]")).map((el) => el.getAttribute("data-testid"));
+    expect(ids).toEqual(["session-ending", "session-reminder"]);
+  });
+});
 
 describe("the installed app's phone shell (2026-11-09)", () => {
   it("installed, outside Telegram: the logo, then bell and avatar (no burger), and the bottom bar after the screen", () => {

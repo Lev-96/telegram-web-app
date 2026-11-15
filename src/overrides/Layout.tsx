@@ -37,6 +37,7 @@
 import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderNotifier";
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
 import SessionEndingNotifier from "@/components/notifications/SessionEndingNotifier";
+import SessionReminderNotifier from "@/components/notifications/SessionReminderNotifier";
 import BillingNoticeNotifier from "@/components/notifications/BillingNoticeNotifier";
 import SupportNotifier from "@/components/notifications/SupportNotifier";
 import NewInterfacesOffer from "@/components/appearance/NewInterfacesOffer";
@@ -142,6 +143,8 @@ const Layout = () => {
             <GlobalBookingNotifier />
             <SupportNotifier />
             <SessionEndingNotifier />
+            {/* Mirrors the desktop Layout (2026-11-15): a reminder a player asked for has rung. */}
+            <SessionReminderNotifier />
             {/* Mirrors the desktop Layout (2026-11-09): a platform payment notice rings. */}
             <BillingNoticeNotifier />
             <ExpenseReminderNotifier />
