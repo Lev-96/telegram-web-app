@@ -400,7 +400,14 @@ plain frame. The Layout override adds `.web-shell--app` and:
   (Telegram, phone app). Three, not four: measured, Armenian
   «մասնաճյուղերը» is 81-84px at the bar's 10px label and five slots at 360px
   give 72px. More's badge sums what is inside except notifications (the bell
-  has them). The bar is the shell grid's third row (z 20): `.main` ends above
+  has them). The update counts are the panel's own `updateBadgeCounts`
+  (`@/realtime/updateBadges`, the function the Sidebar calls): the owner's /
+  manager's «Agent updates» count is the server's `pending_branch_count`, as
+  sent (2026-11-17; it was `agent.has_update ? 1 : 0`, worked out in the
+  panel from a per-person record). Needs a `panel.ref` that has that module:
+  ship `sideMenu.ts` together with the bump (against an older pin it does not
+  typecheck). `tests/appShell.test.tsx` gives the server's answer a count of 2
+  with legacy fields that say "nothing to do", and expects 2. The bar is the shell grid's third row (z 20): `.main` ends above
   it, no padding trick. Drawer 30/40, dialogs 50, toasts above it
   (`.web-shell--app .web-notices`).
 - Motion: a light strip glides to the lit entry (transform, 240ms), the
