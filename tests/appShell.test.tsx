@@ -25,7 +25,8 @@ const state = vi.hoisted(() => ({
   lang: "ru" as "ru" | "en" | "am",
   unread: 3,
   supportUnread: 0,
-  agentUpdate: false,
+  /** The server's `pending_branch_count` for the owner's agent updates. */
+  agentPendingBranches: 0,
   arrangement: [] as Entry[],
   requests: [] as string[],
   signOuts: 0,
@@ -65,8 +66,17 @@ vi.mock("@/i18n/LanguageContext", async () => {
 });
 vi.mock("@/notifications/NotificationsContext", () => ({ useNotifications: () => ({ unreadCount: state.unread }) }));
 vi.mock("@/support/SupportUnreadContext", () => ({ useSupportUnread: () => ({ unread: state.supportUnread }) }));
+// The owner's agent rollout as the server sends it (2026-11-17). The legacy
+// fields of the same answer say "nothing to do" on purpose: the count the
+// menu shows is `pending_branch_count`, as sent, never worked out here.
 vi.mock("@/realtime/UpdatesNotificationContext", () => ({
-  useUpdatesNotification: () => ({ panel: null, agent: state.agentUpdate ? { has_update: true } : null }),
+  useUpdatesNotification: () => ({
+    panel: null,
+    agent: null,
+    agentRollout: state.agentPendingBranches
+      ? { pending_branch_count: state.agentPendingBranches, has_update: false, applied_version: "1.0.27", branches: [] }
+      : null,
+  }),
 }));
 vi.mock("@/preferences/UiPreferencesContext", () => ({
   useUiPreferencesOptional: () => ({ layout: { sidebar: state.arrangement } }),
@@ -129,7 +139,7 @@ afterEach(() => {
   state.lang = "ru";
   state.unread = 3;
   state.supportUnread = 0;
-  state.agentUpdate = false;
+  state.agentPendingBranches = 0;
   state.arrangement = [];
   state.requests = [];
   state.signOuts = 0;
@@ -211,14 +221,16 @@ describe("bottom navigation: the side menu's own entries", () => {
   });
 
   it("carries the menu's counts: notifications in the sheet, agent updates and support on More", async () => {
-    state.agentUpdate = true;
+    state.agentPendingBranches = 2;
     state.supportUnread = 2;
     const { container } = mount(<AppTabBar />);
-    // Notifications are the bell's: More counts the update (1) and support (2).
-    expect(container.querySelector(".web-tabbar__more .web-count")!.textContent).toBe("3");
+    // Notifications are the bell's: More counts the pending branches (2, the
+    // server's count as sent) and support (2).
+    expect(container.querySelector(".web-tabbar__more .web-count")!.textContent).toBe("4");
     fireEvent.click(container.querySelector(".web-tabbar__more")!);
     const sheet = await screen.findByTestId("more-sheet");
     expect(within(sheet).getByText(/Уведомления/).closest("a")!.querySelector(".web-count")!.textContent).toBe("3");
+    expect(sheet.querySelector('a[href="/settings/agent-updates"] .web-count')!.textContent).toBe("2");
     expect(sheet.querySelector('a[href="/support"] .web-count')!.textContent).toBe("2");
     expect(state.requests).toEqual([]);
   });

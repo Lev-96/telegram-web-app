@@ -12,7 +12,10 @@
  *
  * The counts are the menu's own sources, read from the contexts the Sidebar
  * reads (no second poller): notifications from `NotificationsContext`, updates
- * from `UpdatesNotificationContext`, support from `SupportUnreadContext`.
+ * from `UpdatesNotificationContext` through the panel's `updateBadgeCounts`
+ * (the very function the Sidebar calls, so the two never count differently;
+ * since 2026-11-17 the owner's / manager's agent count is the server's
+ * `pending_branch_count`, as sent), support from `SupportUnreadContext`.
  */
 import { useAuth } from "@/auth/AuthContext";
 import { can } from "@/auth/permissions";
@@ -22,6 +25,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import { useNotifications } from "@/notifications/NotificationsContext";
 import { useUiPreferencesOptional } from "@/preferences/UiPreferencesContext";
 import { useUpdatesNotification } from "@/realtime/UpdatesNotificationContext";
+import { updateBadgeCounts } from "@/realtime/updateBadges";
 import { useSupportUnread } from "@/support/SupportUnreadContext";
 import { useLocation } from "react-router-dom";
 
@@ -44,7 +48,7 @@ export const useSideMenu = (): SideMenu => {
   const { pathname } = useLocation();
   const { unreadCount } = useNotifications();
   const { unread: supportUnread } = useSupportUnread();
-  const { panel, agent } = useUpdatesNotification();
+  const updateBadges = updateBadgeCounts(useUpdatesNotification());
   const arrangement = useUiPreferencesOptional()?.layout.sidebar ?? [];
 
   const role = user?.role;
@@ -57,11 +61,11 @@ export const useSideMenu = (): SideMenu => {
     arrangement,
   );
   // The Sidebar's badges, as numbers (Sidebar.tsx: notifications; admin sees
-  // panel + agent updates, owner and manager the agent's only).
+  // panel + agent updates, owner and manager the pending branches).
   const counts: Record<string, number> = {
     "nav.notifications": unreadCount,
-    "nav.updates": (panel?.has_update ? 1 : 0) + (agent?.has_update ? 1 : 0),
-    "nav.agentUpdates": agent?.has_update ? 1 : 0,
+    "nav.updates": updateBadges.updates,
+    "nav.agentUpdates": updateBadges.agentUpdates,
   };
 
   return {
