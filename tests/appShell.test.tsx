@@ -181,7 +181,7 @@ describe("bottom navigation: the side menu's own entries", () => {
 
   it("a menu that fits keeps every entry on the bar and draws no More", () => {
     // Only the entries nobody can hide are left: Dashboard, Notifications, Settings, Interface.
-    const hideable = ["nav.myCompany", "nav.branches", "nav.managers", "nav.revenue", "nav.shifts", "nav.map", "nav.scan", "nav.bookings", "nav.tournaments", "nav.agentUpdates", "nav.platformBilling", "nav.games", "nav.expenses"];
+    const hideable = ["nav.myCompany", "nav.branches", "nav.managers", "nav.revenue", "nav.shifts", "nav.partners", "nav.map", "nav.scan", "nav.bookings", "nav.tournaments", "nav.agentUpdates", "nav.platformBilling", "nav.games", "nav.expenses"];
     state.arrangement = hideable.map((id) => ({ id, hidden: true }));
     const side = mount(<Sidebar />);
     const sidebar = hrefs(side.container.querySelectorAll(".sidebar-nav a"));
