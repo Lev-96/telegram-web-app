@@ -44,7 +44,6 @@ import BillingNoticeNotifier from "@/components/notifications/BillingNoticeNotif
 import SupportNotifier from "@/components/notifications/SupportNotifier";
 import NewInterfacesOffer from "@/components/appearance/NewInterfacesOffer";
 import UnsavedInterfaceNotice from "@/components/appearance/UnsavedInterfaceNotice";
-import UnexpectedWakeDialog from "@/components/ps5/UnexpectedWakeDialog";
 import Sidebar from "@/components/Sidebar";
 import PageTopBar from "@/components/ui/PageTopBar";
 import { useAuth } from "@/auth/AuthContext";
@@ -155,7 +154,6 @@ const Layout = () => {
             <BillingNoticeNotifier />
             <ExpenseReminderNotifier />
           </div>
-          <UnexpectedWakeDialog />
           <InstallBanner key={`banner-${user?.id ?? "none"}`} />
           <PhoneNotificationsPrompt key={`push-${user?.id ?? "none"}`} />
         </div>
