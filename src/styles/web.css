@@ -818,6 +818,17 @@
   pointer-events: auto;
 }
 
+/* «Незакрытые счета» (2026-11-22): in the stack, not fixed bottom-centre as on
+   the desktop; clickable (the stack itself lets clicks through). */
+.web-notices > .open-bills {
+  position: static;
+  transform: none;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  pointer-events: auto;
+}
+
 /* Narrow: at the bottom, above the home indicator, where the thumb is and
    where they cover neither the title nor the page's primary action row. */
 @media (max-width: 899px) {

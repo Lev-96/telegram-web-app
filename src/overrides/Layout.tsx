@@ -37,12 +37,13 @@
 import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderNotifier";
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
 import SessionEndingNotifier from "@/components/notifications/SessionEndingNotifier";
+import DueConfirmNotifier from "@/components/notifications/DueConfirmNotifier";
+import OpenBillsNotifier from "@/components/notifications/OpenBillsNotifier";
 import SessionReminderNotifier from "@/components/notifications/SessionReminderNotifier";
 import BillingNoticeNotifier from "@/components/notifications/BillingNoticeNotifier";
 import SupportNotifier from "@/components/notifications/SupportNotifier";
 import NewInterfacesOffer from "@/components/appearance/NewInterfacesOffer";
 import UnsavedInterfaceNotice from "@/components/appearance/UnsavedInterfaceNotice";
-import UnexpectedWakeDialog from "@/components/ps5/UnexpectedWakeDialog";
 import Sidebar from "@/components/Sidebar";
 import PageTopBar from "@/components/ui/PageTopBar";
 import { useAuth } from "@/auth/AuthContext";
@@ -143,13 +144,16 @@ const Layout = () => {
             <GlobalBookingNotifier />
             <SupportNotifier />
             <SessionEndingNotifier />
+            {/* Mirrors the desktop Layout (2026-11-20): a seat paid ahead ended owing more — how was it paid? */}
+            <DueConfirmNotifier />
+            {/* Mirrors the desktop Layout (2026-11-22): final bills hidden to close later. */}
+            <OpenBillsNotifier />
             {/* Mirrors the desktop Layout (2026-11-15): a reminder a player asked for has rung. */}
             <SessionReminderNotifier />
             {/* Mirrors the desktop Layout (2026-11-09): a platform payment notice rings. */}
             <BillingNoticeNotifier />
             <ExpenseReminderNotifier />
           </div>
-          <UnexpectedWakeDialog />
           <InstallBanner key={`banner-${user?.id ?? "none"}`} />
           <PhoneNotificationsPrompt key={`push-${user?.id ?? "none"}`} />
         </div>
