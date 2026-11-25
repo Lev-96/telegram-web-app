@@ -5,7 +5,7 @@
  * Backend contract (`cyber-place`, built alongside):
  *   GET    /web-push/public-key     → { public_key: string | null }
  *                                     null or 404 = the feature is off here
- *   POST   /web-push/subscriptions  { endpoint, keys: { p256dh, auth }, content_encoding: "aes128gcm" }
+ *   POST   /web-push/subscriptions  { endpoint, keys: { p256dh, auth }, content_encoding: "aes128gcm" | "aesgcm" }
  *   DELETE /web-push/subscriptions  { endpoint }
  *
  * The panel's own API client carries the session token, so the server files
@@ -27,7 +27,7 @@ export interface WebPushPublicKey {
 export interface WebPushSubscriptionBody {
   endpoint: string;
   keys: { p256dh: string; auth: string };
-  content_encoding: "aes128gcm";
+  content_encoding: "aes128gcm" | "aesgcm";
 }
 
 /** `DELETE /web-push/subscriptions`. */
@@ -68,11 +68,22 @@ export const madeWithKey = (sub: PushSubscription, publicKey: string): boolean =
   return a.length === b.length && a.every((byte, i) => byte === b[i]);
 };
 
+/**
+ * How this browser wants pushes encrypted (2026-11-25, owner: old phones
+ * too): «aes128gcm» where it says so (every current browser; Safari always
+ * says), else the older «aesgcm» that old Android browsers (Chrome before 60,
+ * old Samsung Internet and Firefox) read. The server encrypts either.
+ */
+export const pushEncoding = (): "aes128gcm" | "aesgcm" => {
+  const list = (globalThis as { PushManager?: { supportedContentEncodings?: readonly string[] } }).PushManager?.supportedContentEncodings;
+  return Array.isArray(list) && list.includes("aes128gcm") ? "aes128gcm" : "aesgcm";
+};
+
 /** What the server stores for a subscription. */
 export const subscriptionBody = (sub: PushSubscription): WebPushSubscriptionBody => {
   const { endpoint, keys } = sub.toJSON();
   if (!endpoint || !keys?.p256dh || !keys?.auth) throw new Error("The browser returned an incomplete push subscription.");
-  return { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, content_encoding: "aes128gcm" };
+  return { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, content_encoding: pushEncoding() };
 };
 
 const saveOnServer = (sub: PushSubscription) =>

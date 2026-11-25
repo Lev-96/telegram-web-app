@@ -117,7 +117,8 @@ const installBrowser = ({ standalone = false, ios = false, pushApi = true } = {}
       getRegistration: vi.fn(async () => (push.registered ? registration : undefined)),
     },
   });
-  vi.stubGlobal("PushManager", function PushManager() {});
+  // A current browser: it says which encodings it reads (Chrome's list).
+  vi.stubGlobal("PushManager", Object.assign(function PushManager() {}, { supportedContentEncodings: ["aes128gcm", "aesgcm"] }));
   vi.stubGlobal("Notification", {
     get permission() {
       return push.permission;
@@ -599,6 +600,15 @@ describe("silent re-subscribe on load (syncPush)", () => {
     expect(Array.from(pushManager.subscribe.mock.calls[0][0].applicationServerKey)).toEqual(Array.from(KEY_BYTES));
     expect(posts().map((c) => c.body)).toEqual([EXACT_BODY]);
     expect(Notification.requestPermission).not.toHaveBeenCalled();
+  });
+
+  it("an old Android browser that does not list its encodings is saved with «aesgcm» (2026-11-25)", async () => {
+    installBrowser({ standalone: true });
+    vi.stubGlobal("PushManager", function PushManager() {});
+    push.permission = "granted";
+    const { syncPush } = await import("@web/web/pwa/webPush");
+    expect(await syncPush(KEY)).toBe("on");
+    expect(posts().map((c) => (c.body as { content_encoding: string }).content_encoding)).toEqual(["aesgcm"]);
   });
 
   it("the silent subscribe throws: «off», nothing POSTed", async () => {
