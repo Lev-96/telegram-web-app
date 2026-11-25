@@ -443,3 +443,8 @@ animation while the drawer is closed. The shot harness
 (`~/cyber-place-local/reports/owner-web-mobile-shell-2026-11-09/harness/`,
 `pixels.py`) now fails any frame whose bell, avatar or menu-button area is
 not drawn in the bar's colours.
+
+- Push re-check on return (2026-11-25, owner): besides on load,
+  `usePhoneNotifications` re-runs `syncPush` when the app comes back on screen
+  after `PUSH_RESYNC_MS` (10 min) — an iPhone may drop the subscription while
+  the app sleeps. A tap in progress keeps its own state.
