@@ -451,3 +451,6 @@ not drawn in the bar's colours.
 - Push encoding (2026-11-25): `subscriptionBody` sends what the browser lists
   (`pushEncoding`: aes128gcm, else aesgcm for old Android browsers); the
   backend encrypts either (tested in MinishlinkWebPushSenderTest).
+- Shade cap (2026-11-26): `static/sw.js` closes all but the newest 3 shown
+  notices before showing a new one (`KEEP_SHOWN` = 4), since Android drops a
+  site's notices past ~50 silently.
