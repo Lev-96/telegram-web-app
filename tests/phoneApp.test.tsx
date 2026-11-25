@@ -627,6 +627,27 @@ describe("silent re-subscribe on load (syncPush)", () => {
     expect(log).toEqual([]);
   });
 
+  it("back on screen after 10 minutes: the subscription is checked again; sooner, it is not (2026-11-25)", async () => {
+    installBrowser({ standalone: true });
+    push.permission = "granted";
+    renderApp();
+    await screen.findByText("Включены на этом телефоне");
+    expect(posts()).toHaveLength(1);
+    const { PUSH_RESYNC_MS } = await import("@web/web/pwa/usePhoneNotifications");
+    const start = Date.now();
+    const now = vi.spyOn(Date, "now");
+    const comeBack = async (at: number) => {
+      now.mockReturnValue(at);
+      await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
+      await settle();
+    };
+    await comeBack(start + 60_000);
+    expect(posts()).toHaveLength(1);
+    await comeBack(start + PUSH_RESYNC_MS + 60_000);
+    expect(posts()).toHaveLength(2);
+    now.mockRestore();
+  });
+
   it("in the app: the card reads «on» after the silent re-subscribe", async () => {
     installBrowser({ standalone: true });
     push.permission = "granted";

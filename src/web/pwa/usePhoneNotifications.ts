@@ -9,7 +9,9 @@
  * On load, a phone that already allowed notifications re-sends its
  * subscription quietly, or subscribes again when it has none (syncPush).
  * Again when the signed-in account changes, so the server files the phone
- * under whoever uses it now.
+ * under whoever uses it now. And when the app comes back on screen after
+ * {@link PUSH_RESYNC_MS} (2026-11-25, owner: pushes must always arrive): a
+ * phone, iPhones above all, may drop the subscription while the app sleeps.
  *
  * ONE instance per app (2026-11-09): PhoneNotificationsProvider runs it in the
  * Layout, outside the menu, and the menu card and the first-launch prompt both
@@ -26,6 +28,9 @@ export type PhoneNotifications =
   | { kind: "off" | "on"; busy: boolean };
 
 const HIDDEN: PhoneNotifications = { kind: "hidden" };
+
+/** The app back on screen after this long re-checks its subscription. */
+export const PUSH_RESYNC_MS = 10 * 60 * 1000;
 
 /** How a tap on «turn on» ended: the permission's answer, or "failed" (the hook has already said so). */
 export type EnableOutcome = NotificationPermission | "failed";
@@ -54,6 +59,7 @@ export const usePhoneNotifications = (
       return;
     }
     let live = true;
+    let syncedAt = 0;
     void (async () => {
       try {
         const publicKey = await fetchPublicKey();
@@ -62,14 +68,28 @@ export const usePhoneNotifications = (
         key.current = publicKey;
         if (Notification.permission === "denied") return setState({ kind: "blocked" });
         const now = await syncPush(publicKey);
+        syncedAt = Date.now();
         if (live) setState({ kind: now, busy: false });
       } catch {
         // The server could not be asked: nothing to offer until the next load.
         if (live) setState(HIDDEN);
       }
     })();
+    const onVisible = () => {
+      const publicKey = key.current;
+      if (document.visibilityState !== "visible" || !publicKey || syncedAt === 0) return;
+      if (Date.now() - syncedAt < PUSH_RESYNC_MS) return;
+      syncedAt = Date.now();
+      void syncPush(publicKey).then(
+        // A tap in progress keeps its own state.
+        (now) => { if (live) setState((s) => (s.kind === "on" || s.kind === "off") && !s.busy ? { kind: now, busy: false } : s); },
+        () => undefined,
+      );
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       live = false;
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [userId]);
 
