@@ -448,3 +448,6 @@ not drawn in the bar's colours.
   `usePhoneNotifications` re-runs `syncPush` when the app comes back on screen
   after `PUSH_RESYNC_MS` (10 min) — an iPhone may drop the subscription while
   the app sleeps. A tap in progress keeps its own state.
+- Push encoding (2026-11-25): `subscriptionBody` sends what the browser lists
+  (`pushEncoding`: aes128gcm, else aesgcm for old Android browsers); the
+  backend encrypts either (tested in MinishlinkWebPushSenderTest).
