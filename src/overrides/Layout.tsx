@@ -38,6 +38,7 @@ import ExpenseReminderNotifier from "@/components/notifications/ExpenseReminderN
 import GlobalBookingNotifier from "@/components/notifications/GlobalBookingNotifier";
 import SessionEndingNotifier from "@/components/notifications/SessionEndingNotifier";
 import DueConfirmNotifier from "@/components/notifications/DueConfirmNotifier";
+import TimeBonusNotifier from "@/components/notifications/TimeBonusNotifier";
 import OpenBillsNotifier from "@/components/notifications/OpenBillsNotifier";
 import SessionReminderNotifier from "@/components/notifications/SessionReminderNotifier";
 import BillingNoticeNotifier from "@/components/notifications/BillingNoticeNotifier";
@@ -146,6 +147,7 @@ const Layout = () => {
             <SessionEndingNotifier />
             {/* Mirrors the desktop Layout (2026-11-20): a seat paid ahead ended owing more — how was it paid? */}
             <DueConfirmNotifier />
+            <TimeBonusNotifier />
             {/* Mirrors the desktop Layout (2026-11-22): final bills hidden to close later. */}
             <OpenBillsNotifier />
             {/* Mirrors the desktop Layout (2026-11-15): a reminder a player asked for has rung. */}

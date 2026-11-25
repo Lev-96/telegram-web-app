@@ -29,6 +29,7 @@ vi.mock("@/components/notifications/GlobalBookingNotifier", () => ({ default: ()
 vi.mock("@/components/notifications/SessionEndingNotifier", () => ({ default: () => <i data-testid="session-ending" /> }));
 vi.mock("@/components/notifications/SessionReminderNotifier", () => ({ default: () => <i data-testid="session-reminder" /> }));
 vi.mock("@/components/notifications/DueConfirmNotifier", () => ({ default: () => <i data-testid="due-confirm" /> }));
+vi.mock("@/components/notifications/TimeBonusNotifier", () => ({ default: () => <i data-testid="time-bonus" /> }));
 vi.mock("@/components/notifications/OpenBillsNotifier", () => ({ default: () => <i data-testid="open-bills" /> }));
 vi.mock("@/components/notifications/BillingNoticeNotifier", () => ({ default: () => null }));
 vi.mock("@/components/notifications/SupportNotifier", () => ({ default: () => null }));
@@ -159,11 +160,11 @@ describe("what the desktop shell mounts above every screen (panel 2026-10-26/27)
 });
 
 describe("the notifiers the desktop Layout mounts (panel 6a7987e)", () => {
-  it("in the desktop's order: session ending, «оплатили?», «Незакрытые счета», then the player's reminder", () => {
+  it("in the desktop's order: session ending, «оплатили?», «Бонус времени», «Незакрытые счета», then the player's reminder", () => {
     document.documentElement.dataset.shell = "web";
     const { container } = mount();
     const ids = Array.from(container.querySelectorAll(".web-notices > [data-testid]")).map((el) => el.getAttribute("data-testid"));
-    expect(ids).toEqual(["session-ending", "due-confirm", "open-bills", "session-reminder"]);
+    expect(ids).toEqual(["session-ending", "due-confirm", "time-bonus", "open-bills", "session-reminder"]);
   });
 });
 
