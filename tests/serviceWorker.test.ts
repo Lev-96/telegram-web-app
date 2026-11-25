@@ -66,6 +66,16 @@ describe("service worker: push", () => {
     });
   });
 
+  it("keeps the shade to the newest few (2026-11-26: Android drops notices past ~50 of one app)", async () => {
+    const { self, listeners } = load();
+    const shown = Array.from({ length: 6 }, (_, i) => ({ timestamp: 1000 + i, close: vi.fn() }));
+    (self.registration as unknown as { getNotifications: () => Promise<typeof shown> }).getNotifications = vi.fn(async () => [...shown].reverse());
+    await dispatch(listeners.push, { data: pushData({ title: "Booking", body: "Seat 4 at 19:00" }) });
+    // the three oldest go, three stay, the new one is the fourth
+    expect(shown.map((n) => n.close.mock.calls.length)).toEqual([1, 1, 1, 0, 0, 0]);
+    expect(self.registration.showNotification).toHaveBeenCalledTimes(1);
+  });
+
   it("still shows something for an empty or broken payload, without a tag", async () => {
     const { self, listeners } = load();
     await dispatch(listeners.push, { data: null });

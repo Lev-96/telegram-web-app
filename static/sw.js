@@ -76,9 +76,39 @@ function notificationOptions(push) {
   return options;
 }
 
+/**
+ * Android shows at most ~50 notifications of one app and silently drops any
+ * more (2026-11-26, owner: pushes must always arrive). The shade keeps the
+ * newest few: older ones are closed before a new one is shown. A browser
+ * without getNotifications just shows the new one.
+ */
+var KEEP_SHOWN = 4;
+
+function makeRoom() {
+  var reg = self.registration;
+  if (!reg || typeof reg.getNotifications !== "function") return Promise.resolve();
+  return reg
+    .getNotifications()
+    .then(function (list) {
+      var sorted = list.slice().sort(function (a, b) {
+        return (a.timestamp || 0) - (b.timestamp || 0);
+      });
+      sorted.slice(0, Math.max(0, sorted.length - (KEEP_SHOWN - 1))).forEach(function (n) {
+        n.close();
+      });
+    })
+    .catch(function () {
+      // Showing the new notice matters more.
+    });
+}
+
 function onPush(event) {
   var push = readPush(event.data);
-  event.waitUntil(self.registration.showNotification(push.title, notificationOptions(push)));
+  event.waitUntil(
+    makeRoom().then(function () {
+      return self.registration.showNotification(push.title, notificationOptions(push));
+    }),
+  );
 }
 
 /**
